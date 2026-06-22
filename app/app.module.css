@@ -1,0 +1,101 @@
+.root{max-width:920px;margin:0 auto;padding:0 16px 60px}
+.loading{text-align:center;padding:80px 20px;color:#6b7280;font-size:15px}
+
+.header{background:#1f2937;color:#fff;margin:0 -16px;padding:18px 24px 0;position:sticky;top:0;z-index:10}
+.headerInner{max-width:920px;margin:0 auto;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.h1{font-size:22px;font-weight:600;letter-spacing:-.3px}
+.sub{font-size:12px;color:#9ca3af;margin-top:2px}
+
+.tabs{max-width:920px;margin:14px auto 0;display:flex;gap:4px;flex-wrap:wrap}
+.tab{padding:9px 16px;border-radius:8px 8px 0 0;font-size:13px;font-weight:500;color:rgba(255,255,255,.6);background:transparent;transition:all .15s}
+.tab:hover{color:#fff;background:rgba(255,255,255,.08)}
+.tabOn{background:#f5f4f0;color:#1f2937;font-weight:600}
+.main{padding-top:22px}
+.footer{text-align:center;font-size:11px;color:#9ca3af;margin-top:40px}
+
+.statRow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.stat{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;text-align:center}
+.statN{display:block;font-size:26px;font-weight:600;color:#111827}
+.statL{display:block;font-size:11px;color:#6b7280;margin-top:2px}
+
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px;margin-bottom:16px}
+.cardLabel{font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.cardRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cardName{font-size:18px;font-weight:600;color:#111827}
+.countdown{margin-right:auto;font-size:14px;font-weight:600;color:#fff;background:#1f2937;padding:4px 12px;border-radius:100px}
+.cardMeta{font-size:13px;color:#6b7280;margin-top:8px}
+.link{color:#2563eb;font-weight:500;text-decoration:none}
+
+.secTitle{font-size:14px;font-weight:600;color:#374151;margin:24px 0 10px}
+.empty{color:#9ca3af;font-size:13px;padding:10px 0}
+.note{font-size:12px;color:#6b7280;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:16px;line-height:1.5}
+
+.list{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.row{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:9px 12px;flex-wrap:wrap}
+.rowDate{font-size:12px;font-weight:600;color:#374151;min-width:92px}
+.rowText{font-size:13px;color:#374151;flex:1;min-width:120px}
+.rowDone{opacity:.45}
+.rowOverdue{background:#fef2f2}
+.rowActs{display:flex;gap:6px;margin-right:auto}
+
+.badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:100px;white-space:nowrap}
+.chTag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:100px}
+.chEmail{background:#dbeafe;color:#1e40af}
+.chSms{background:#fef3c7;color:#92400e}
+.tagSoon{font-size:10px;font-weight:600;color:#92400e;background:#fde68a;padding:2px 8px;border-radius:100px}
+.tagOver{font-size:10px;font-weight:600;color:#fff;background:#dc2626;padding:2px 8px;border-radius:100px}
+
+.check{width:22px;height:22px;border-radius:6px;border:1.5px solid #d1d5db;background:#fff;color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.checkOn{background:#16a34a;border-color:#16a34a}
+
+.formGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.formRow{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.field,.fieldW{display:flex;flex-direction:column;gap:5px}
+.fieldW{grid-column:1/-1}
+.field span,.fieldW span{font-size:12px;font-weight:500;color:#6b7280}
+.field input,.field select,.fieldW input{padding:9px 11px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:#fff;width:100%}
+.field input:disabled,.fieldW input:disabled{background:#f3f4f6;color:#9ca3af}
+.actions{display:flex;gap:8px;margin-top:14px}
+
+.btnP{background:#1f2937;color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600}
+.btnP:disabled{background:#d1d5db;cursor:not-allowed}
+.btnG{background:#f3f4f6;color:#374151;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;display:inline-flex;align-items:center}
+.btnSm{background:#f3f4f6;color:#374151;width:32px;height:32px;border-radius:7px;font-size:14px}
+.btnSm:disabled{opacity:.35;cursor:not-allowed}
+.btnSmD{background:#fee2e2;color:#b91c1c;width:32px;height:32px;border-radius:7px;font-size:14px}
+.btnSmD:disabled{opacity:.35;cursor:not-allowed}
+
+.lockGuard{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:12px 16px;margin-bottom:16px;flex-wrap:wrap}
+.lockOpen{background:#ecfdf5;border-color:#a7f3d0}
+.lockLabel{font-size:13px;font-weight:600;color:#9a3412}
+.lockOpen .lockLabel{color:#047857}
+.lockBtns{display:flex;gap:8px}
+.lockBtn{display:flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #fdba74;color:#9a3412;padding:7px 13px;border-radius:8px;font-size:12px;font-weight:600}
+.lockBtnOn{border-color:#6ee7b7;color:#047857;background:#f0fdf4}
+
+/* messages */
+.msgCard{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:10px}
+.msgSent{opacity:.55}
+.msgHead{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.msgType{font-size:12px;font-weight:600;color:#6b7280}
+.msgStatus{font-size:11px;font-weight:600;padding:2px 8px;border-radius:100px}
+.statusSent{background:#d9ead3;color:#2d6117}
+.statusPending{background:#fef3c7;color:#92400e}
+.msgBody{margin:0;padding:12px;font-size:13px;line-height:1.6;color:#1f2937;white-space:pre-wrap;word-break:break-word;font-family:inherit;background:#fafafa;border-radius:8px;max-height:300px;overflow-y:auto;direction:rtl;text-align:right}
+.msgActions{display:flex;gap:8px;margin-top:10px}
+
+/* brands */
+.brandsGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.brandCard{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.brandHead{display:flex;align-items:center;gap:10px}
+.brandType{font-size:11px;color:#9ca3af}
+.brandLogo{width:100%;height:90px;object-fit:contain;background:#f9fafb;border-radius:8px}
+.brandLogoEmpty{width:100%;height:90px;display:flex;align-items:center;justify-content:center;background:#f9fafb;border-radius:8px;color:#cbd5e1;font-size:12px}
+.brandActs{display:flex;gap:8px;margin-top:4px}
+
+@media(max-width:640px){
+  .statRow{grid-template-columns:repeat(2,1fr)}
+  .formGrid{grid-template-columns:1fr}
+  .brandsGrid{grid-template-columns:1fr}
+  .tab{padding:8px 11px;font-size:12px}
+}
