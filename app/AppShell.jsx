@@ -195,6 +195,12 @@ function Messages({ data, reload }) {
   async function copyMsg(text) {
     await navigator.clipboard?.writeText(text);
   }
+  async function sendToCommunity(text, link) {
+    await navigator.clipboard?.writeText(text);
+    window.open(link || "https://web.whatsapp.com", "_blank");
+  }
+
+  const brandComms = event ? (data.communities || []).filter(c => c.brand === event.brand) : [];
 
   return (
     <div>
@@ -223,6 +229,12 @@ function Messages({ data, reload }) {
           <pre className={s.msgBody}>{m.body}</pre>
           <div className={s.msgActions}>
             <button className={s.btnP} onClick={()=>copyMsg(m.body)}>📋 העתק</button>
+            {brandComms.length > 0 && <span className={s.sendLabel}>שלח לקהילה:</span>}
+            {brandComms.map(c => (
+              <button key={c.id} className={s.btnWa} onClick={()=>sendToCommunity(m.body, c.link)} title="מעתיק את ההודעה ופותח את הקהילה">
+                💬 {c.name}
+              </button>
+            ))}
             {m.status!=="נשלח" && <button className={s.btnG} onClick={()=>markSent(m.id)}>✓ סמן כנשלח</button>}
           </div>
         </div>
@@ -313,9 +325,10 @@ function BrandsTab({ data, reload, unlocked, setUnlocked }) {
   const assets = data.brandAssets || {};
   const [draft, setDraft] = useState(assets);
   useEffect(() => setDraft(data.brandAssets || {}), [data.brandAssets]);
+  const today = new Date(); today.setHours(0,0,0,0);
 
   async function save(bid) {
-    await apiPut("brands", { brand: bid, ...draft[bid] });
+    await apiPut("brands", { brand: bid, logo: draft[bid]?.logo||"", drive_link: draft[bid]?.drive_link||"", canva_templates: draft[bid]?.canva_templates||"" });
     reload();
   }
 
@@ -324,21 +337,48 @@ function BrandsTab({ data, reload, unlocked, setUnlocked }) {
       <LockGuard onChange={setUnlocked}/>
       <div className={s.brandsGrid}>{BLIST.map(bid => {
         const b = BRANDS[bid], m = draft[bid] || {};
+        const brandEvents = data.events.filter(e => e.brand === bid);
+        const upcoming = brandEvents.filter(e => new Date(e.date) >= today).sort((a,c)=>new Date(a.date)-new Date(c.date));
+        const nextEv = upcoming[0];
         return (
-          <div key={bid} className={s.brandCard} style={{borderTop:`4px solid ${b.text}`}}>
+          <div key={bid} className={s.brandCard} style={{borderTop:`5px solid ${b.text}`}}>
             <div className={s.brandHead}>
-              <span className={s.badge} style={{background:b.bg,color:b.text}}>{b.name}</span>
+              <span className={s.badge} style={{background:b.bg,color:b.text,fontSize:13}}>{b.name}</span>
               <span className={s.brandType}>{b.type}</span>
             </div>
+
             {m.logo ? <img src={m.logo} alt={b.name} className={s.brandLogo}/> : <div className={s.brandLogoEmpty}>אין לוגו</div>}
-            <label className={s.field}><span>לוגו (URL)</span><input dir="ltr" disabled={!unlocked} value={m.logo||""} onChange={e=>setDraft({...draft,[bid]:{...m,logo:e.target.value}})}/></label>
-            <label className={s.field}><span>תיקיית דרייב</span><input dir="ltr" disabled={!unlocked} value={m.drive_link||""} onChange={e=>setDraft({...draft,[bid]:{...m,drive_link:e.target.value}})}/></label>
-            <label className={s.field}><span>טון הקול</span><input disabled={!unlocked} value={m.tone||""} onChange={e=>setDraft({...draft,[bid]:{...m,tone:e.target.value}})}/></label>
-            <label className={s.field}><span>האשטגים</span><input disabled={!unlocked} value={m.hashtags||""} onChange={e=>setDraft({...draft,[bid]:{...m,hashtags:e.target.value}})}/></label>
-            <div className={s.brandActs}>
-              {m.drive_link && <a href={m.drive_link} target="_blank" rel="noreferrer" className={s.btnG}>📁 דרייב</a>}
-              <button className={s.btnP} disabled={!unlocked} onClick={()=>save(bid)}>שמור</button>
-            </div>
+
+            {!unlocked ? (
+              <>
+                {/* quick access */}
+                <div className={s.quickRow}>
+                  <a className={`${s.quickBtn} ${!m.drive_link?s.quickBtnOff:""}`} href={m.drive_link||"#"} target="_blank" rel="noreferrer">
+                    <span>📁</span><span>תיקיית דרייב</span>
+                  </a>
+                  <a className={`${s.quickBtn} ${!m.canva_templates?s.quickBtnOff:""}`} href={m.canva_templates||"#"} target="_blank" rel="noreferrer">
+                    <span>🎨</span><span>Canva</span>
+                  </a>
+                </div>
+                {/* next event + count */}
+                <div className={s.brandNext}>
+                  <span className={s.brandNextLabel}>האירוע הקרוב</span>
+                  <span className={s.brandNextVal}>
+                    {nextEv ? `${nextEv.name} · ${fmtDate(nextEv.date)} (${(()=>{const d=diffDays(today,new Date(nextEv.date));return d===0?"היום":d===1?"מחר":`עוד ${d} ימים`;})()})` : "אין אירוע מתוכנן"}
+                  </span>
+                  <span className={s.brandNextCount}>{upcoming.length} עתידיים</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <label className={s.field}><span>לוגו (URL)</span><input dir="ltr" value={m.logo||""} onChange={e=>setDraft({...draft,[bid]:{...m,logo:e.target.value}})} placeholder="https://...png"/></label>
+                <label className={s.field}><span>תיקיית דרייב</span><input dir="ltr" value={m.drive_link||""} onChange={e=>setDraft({...draft,[bid]:{...m,drive_link:e.target.value}})} placeholder="https://drive.google.com/..."/></label>
+                <label className={s.field}><span>תיקיית Canva</span><input dir="ltr" value={m.canva_templates||""} onChange={e=>setDraft({...draft,[bid]:{...m,canva_templates:e.target.value}})} placeholder="https://canva.com/..."/></label>
+                <div className={s.brandActs}>
+                  <button className={s.btnP} onClick={()=>save(bid)}>שמור</button>
+                </div>
+              </>
+            )}
           </div>
         );
       })}</div>
