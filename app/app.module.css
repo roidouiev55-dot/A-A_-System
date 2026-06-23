@@ -1,111 +1,152 @@
-.root{max-width:1280px;margin:0 auto;padding:0 24px 60px}
-.loading{text-align:center;padding:100px 20px;color:#6b7280;font-size:15px}
+.root{max-width:1400px;margin:0 auto;padding:0 28px 70px}
+.loading{text-align:center;padding:120px 20px;color:var(--ink-soft);font-size:16px;font-family:"Frank Ruhl Libre",serif}
 
-.header{background:linear-gradient(120deg,#1f2937 0%,#3b2f4a 55%,#5b2d4e 100%);color:#fff;margin:0 -24px;padding:22px 32px 0;position:sticky;top:0;z-index:10;box-shadow:0 2px 16px rgba(0,0,0,.12)}
-.headerInner{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.h1{font-size:24px;font-weight:700;letter-spacing:-.4px;display:flex;align-items:center;gap:10px}
-.h1::before{content:"🍷";font-size:22px}
-.sub{font-size:12.5px;color:rgba(255,255,255,.65);margin-top:3px}
+/* ── masthead: wine label ── */
+.header{
+  background:linear-gradient(150deg,var(--wine-deep) 0%,var(--wine) 70%);
+  color:#fff;margin:0 -28px;padding:0;position:sticky;top:0;z-index:20;
+  box-shadow:0 6px 24px rgba(74,22,34,.28);
+  border-bottom:2px solid var(--brass);
+}
+.headerInner{
+  max-width:1400px;margin:0 auto;padding:20px 32px 16px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  position:relative;
+}
+.headerInner::after{
+  content:"";position:absolute;inset:8px 32px auto 32px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--brass-light),transparent);opacity:.4;top:6px;
+}
+.h1{font-family:"Frank Ruhl Libre",serif;font-size:30px;font-weight:900;letter-spacing:.5px;display:flex;align-items:center;gap:12px;line-height:1}
+.h1::before{content:"🍷";font-size:24px}
+.sub{font-size:12.5px;color:rgba(255,255,255,.7);margin-top:6px;letter-spacing:.04em}
 
-.tabs{max-width:1280px;margin:16px auto 0;display:flex;gap:5px;flex-wrap:wrap}
-.tab{padding:10px 18px;border-radius:10px 10px 0 0;font-size:13.5px;font-weight:500;color:rgba(255,255,255,.65);background:rgba(255,255,255,.06);transition:all .15s}
-.tab:hover{color:#fff;background:rgba(255,255,255,.14)}
-.tabOn{background:#f5f4f0;color:#1f2937;font-weight:700}
-.main{padding-top:26px}
-.footer{text-align:center;font-size:11px;color:#9ca3af;margin-top:48px}
+.tabs{max-width:1400px;margin:0 auto;padding:0 24px;display:flex;gap:2px;flex-wrap:wrap;background:var(--wine-deep)}
+.tab{padding:12px 20px;font-size:14px;font-weight:600;color:rgba(255,255,255,.6);background:transparent;transition:all .18s;border-bottom:3px solid transparent}
+.tab:hover{color:#fff;background:rgba(255,255,255,.06)}
+.tabOn{color:#fff;border-bottom-color:var(--brass-light);background:rgba(176,136,71,.12)}
+.main{padding-top:30px}
+.footer{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:56px;font-family:"Frank Ruhl Libre",serif;letter-spacing:.05em}
 
-.statRow{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
-.stat{border-radius:16px;padding:18px;text-align:center;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.08);position:relative;overflow:hidden}
-.stat:nth-child(1){background:linear-gradient(135deg,#7b0000,#b33939)}
-.stat:nth-child(2){background:linear-gradient(135deg,#0b5e57,#1d9e75)}
-.stat:nth-child(3){background:linear-gradient(135deg,#2d6117,#639922)}
-.stat:nth-child(4){background:linear-gradient(135deg,#5b2d9e,#8b5cf6)}
-.statN{display:block;font-size:30px;font-weight:700}
-.statL{display:block;font-size:12px;opacity:.9;margin-top:3px;font-weight:500}
+/* ── stat cards: ledger tiles ── */
+.statRow{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 18px;
+  text-align:center;position:relative;overflow:hidden;
+  box-shadow:0 2px 10px rgba(42,33,28,.04);
+}
+.stat::before{content:"";position:absolute;top:0;right:0;left:0;height:4px}
+.stat:nth-child(1)::before{background:#7B0000}
+.stat:nth-child(2)::before{background:#0B5E57}
+.stat:nth-child(3)::before{background:#2D6117}
+.stat:nth-child(4)::before{background:#5B2D9E}
+.statN{display:block;font-family:"Frank Ruhl Libre",serif;font-size:34px;font-weight:900;color:var(--ink);line-height:1}
+.statL{display:block;font-size:12px;color:var(--ink-soft);margin-top:6px;font-weight:600;letter-spacing:.02em}
 
-.card{background:#fff;border:1px solid #ececec;border-radius:18px;padding:22px;margin-bottom:18px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
-.cardLabel{font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
-.cardRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.cardName{font-size:19px;font-weight:700;color:#111827}
-.countdown{margin-right:auto;font-size:14px;font-weight:700;color:#fff;background:linear-gradient(135deg,#1f2937,#5b2d4e);padding:5px 14px;border-radius:100px}
-.cardMeta{font-size:13px;color:#6b7280;margin-top:10px}
-.link{color:#2563eb;font-weight:600;text-decoration:none}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:0 2px 12px rgba(42,33,28,.05)}
+.cardLabel{font-family:"Frank Ruhl Libre",serif;font-size:13px;font-weight:700;color:var(--wine);text-transform:none;letter-spacing:.03em;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.cardRow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.cardName{font-family:"Frank Ruhl Libre",serif;font-size:22px;font-weight:700;color:var(--ink)}
+.countdown{margin-right:auto;font-size:14px;font-weight:700;color:#fff;background:var(--wine);padding:6px 16px;border-radius:100px;letter-spacing:.02em}
+.cardMeta{font-size:13.5px;color:var(--ink-soft);margin-top:10px}
+.link{color:var(--wine);font-weight:700;text-decoration:none;border-bottom:1px solid var(--brass-light)}
 
-.secTitle{font-size:15px;font-weight:700;color:#374151;margin:28px 0 12px;display:flex;align-items:center;gap:8px}
+.secTitle{font-family:"Frank Ruhl Libre",serif;font-size:18px;font-weight:700;color:var(--ink);margin:30px 0 14px;display:flex;align-items:center;gap:9px;padding-bottom:8px;border-bottom:1px solid var(--line)}
 
-.empty{color:#9ca3af;font-size:13px;padding:14px;background:#fff;border-radius:12px;border:1px dashed #e5e7eb;text-align:center}
-.note{font-size:12.5px;color:#6b7280;background:linear-gradient(135deg,#fffbeb,#fef9f3);border:1px solid #fde9c8;border-radius:12px;padding:13px 16px;margin-bottom:18px;line-height:1.55}
+.empty{color:var(--ink-soft);font-size:13.5px;padding:18px;background:var(--surface);border-radius:12px;border:1px dashed var(--line);text-align:center}
+.note{font-size:13px;color:var(--ink-soft);background:linear-gradient(135deg,#FBF6EC,#F7EFE0);border:1px solid var(--line);border-right:3px solid var(--brass);border-radius:12px;padding:14px 18px;margin-bottom:20px;line-height:1.6}
 
-.list{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
-.row{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #ececec;border-radius:12px;padding:11px 14px;flex-wrap:wrap;transition:box-shadow .15s,transform .1s}
-.row:hover{box-shadow:0 3px 12px rgba(0,0,0,.06)}
-.rowDate{font-size:12px;font-weight:700;color:#374151;min-width:96px}
-.rowText{font-size:13px;color:#374151;flex:1;min-width:120px}
-.rowDone{opacity:.45}
-.rowOverdue{background:#fef2f2;border-color:#fecaca}
+.list{display:flex;flex-direction:column;gap:9px;margin-bottom:20px}
+.row{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px;flex-wrap:wrap;transition:box-shadow .15s,transform .12s}
+.row:hover{box-shadow:0 4px 14px rgba(42,33,28,.07);transform:translateY(-1px)}
+.rowDate{font-size:12.5px;font-weight:700;color:var(--ink);min-width:100px}
+.rowText{font-size:13.5px;color:var(--ink);flex:1;min-width:130px}
+.rowDone{opacity:.42}
+.rowOverdue{background:#FBEEEC;border-color:#E8C4BD}
 .rowActs{display:flex;gap:6px;margin-right:auto}
 
-.badge{font-size:11px;font-weight:700;padding:3px 11px;border-radius:100px;white-space:nowrap}
-.chTag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px}
-.chEmail{background:#dbeafe;color:#1e40af}
-.chSms{background:#fef3c7;color:#92400e}
-.tagSoon{font-size:10px;font-weight:700;color:#92400e;background:#fde68a;padding:3px 9px;border-radius:100px}
-.tagOver{font-size:10px;font-weight:700;color:#fff;background:#dc2626;padding:3px 9px;border-radius:100px}
+.badge{font-size:11px;font-weight:700;padding:3px 12px;border-radius:100px;white-space:nowrap}
+.chTag{font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px}
+.chEmail{background:#DCE7F5;color:#1E40AF}
+.chSms{background:#F6E8C8;color:#92400E}
+.tagSoon{font-size:10px;font-weight:700;color:#92400E;background:#F4D98B;padding:3px 10px;border-radius:100px}
+.tagOver{font-size:10px;font-weight:700;color:#fff;background:#B3261E;padding:3px 10px;border-radius:100px}
 
-.check{width:24px;height:24px;border-radius:7px;border:2px solid #d1d5db;background:#fff;color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
-.checkOn{background:#16a34a;border-color:#16a34a}
+.check{width:25px;height:25px;border-radius:7px;border:2px solid var(--line);background:#fff;color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.checkOn{background:#2D6117;border-color:#2D6117}
 
-.formGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
-.formRow{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
-.field,.fieldW{display:flex;flex-direction:column;gap:6px}
+.formGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.formRow{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.field,.fieldW{display:flex;flex-direction:column;gap:7px}
 .fieldW{grid-column:1/-1}
-.field span,.fieldW span{font-size:12px;font-weight:600;color:#6b7280}
-.field input,.field select,.fieldW input{padding:10px 13px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;background:#fff;width:100%;transition:border-color .15s}
-.field input:focus,.fieldW input:focus,.field select:focus{outline:none;border-color:#8b5cf6}
-.field input:disabled,.fieldW input:disabled{background:#f3f4f6;color:#9ca3af}
-.actions{display:flex;gap:8px;margin-top:16px}
+.field span,.fieldW span{font-size:12px;font-weight:600;color:var(--ink-soft);letter-spacing:.02em}
+.field input,.field select,.fieldW input{padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff;width:100%;transition:border-color .15s;color:var(--ink)}
+.field input:focus,.fieldW input:focus,.field select:focus{outline:none;border-color:var(--brass)}
+.field input:disabled,.fieldW input:disabled{background:#F2ECE0;color:var(--ink-soft)}
+.actions{display:flex;gap:10px;margin-top:18px}
 
-.btnP{background:linear-gradient(135deg,#1f2937,#5b2d4e);color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;transition:opacity .15s}
-.btnP:hover{opacity:.9}
-.btnP:disabled{background:#d1d5db;cursor:not-allowed}
-.btnG{background:#f3f4f6;color:#374151;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:500;text-decoration:none;display:inline-flex;align-items:center}
-.btnSm{background:#f3f4f6;color:#374151;width:34px;height:34px;border-radius:9px;font-size:14px}
+.btnP{background:var(--wine);color:#fff;padding:11px 22px;border-radius:10px;font-size:13.5px;font-weight:700;transition:background .15s;letter-spacing:.02em}
+.btnP:hover{background:var(--wine-deep)}
+.btnP:disabled{background:#C9BFB0;cursor:not-allowed}
+.btnG{background:#F2ECE0;color:var(--ink);padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line)}
+.btnG:hover{background:#EBE3D3}
+.btnSm{background:#F2ECE0;color:var(--ink);width:36px;height:36px;border-radius:9px;font-size:14px;border:1px solid var(--line)}
 .btnSm:disabled{opacity:.35;cursor:not-allowed}
-.btnSmD{background:#fee2e2;color:#b91c1c;width:34px;height:34px;border-radius:9px;font-size:14px}
+.btnSmD{background:#F7E2DD;color:#9B2C20;width:36px;height:36px;border-radius:9px;font-size:14px;border:1px solid #E8C4BD}
 .btnSmD:disabled{opacity:.35;cursor:not-allowed}
 
-.lockGuard{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#fff7ed,#fff1f2);border:1px solid #fed7aa;border-radius:14px;padding:13px 18px;margin-bottom:18px;flex-wrap:wrap}
-.lockOpen{background:linear-gradient(135deg,#ecfdf5,#f0fdfa);border-color:#a7f3d0}
-.lockLabel{font-size:13px;font-weight:700;color:#9a3412}
-.lockOpen .lockLabel{color:#047857}
+.lockGuard{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#F7EFE0,#F4E8D6);border:1px solid var(--brass);border-radius:14px;padding:14px 20px;margin-bottom:20px;flex-wrap:wrap}
+.lockOpen{background:linear-gradient(135deg,#EAF3E4,#E0EFD6);border-color:#7FA86A}
+.lockLabel{font-size:13.5px;font-weight:700;color:#8A5A2B}
+.lockOpen .lockLabel{color:#3D6B27}
 .lockBtns{display:flex;gap:8px}
-.lockBtn{display:flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #fdba74;color:#9a3412;padding:8px 15px;border-radius:9px;font-size:12px;font-weight:700}
-.lockBtnOn{border-color:#6ee7b7;color:#047857;background:#f0fdf4}
+.lockBtn{display:flex;align-items:center;gap:5px;background:#fff;border:1.5px solid var(--brass);color:#8A5A2B;padding:8px 16px;border-radius:9px;font-size:12px;font-weight:700}
+.lockBtnOn{border-color:#7FA86A;color:#3D6B27;background:#F1F7EC}
 
-.msgCard{background:#fff;border:1px solid #ececec;border-radius:14px;padding:18px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+/* messages */
+.msgCard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;box-shadow:0 2px 10px rgba(42,33,28,.05)}
 .msgSent{opacity:.55}
-.msgHead{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-.msgType{font-size:12px;font-weight:700;color:#6b7280}
-.msgStatus{font-size:11px;font-weight:700;padding:3px 9px;border-radius:100px}
-.statusSent{background:#d9ead3;color:#2d6117}
-.statusPending{background:#fef3c7;color:#92400e}
-.msgBody{margin:0;padding:14px;font-size:13px;line-height:1.65;color:#1f2937;white-space:pre-wrap;word-break:break-word;font-family:inherit;background:#faf9f7;border-radius:10px;max-height:320px;overflow-y:auto;direction:rtl;text-align:right}
-.msgActions{display:flex;gap:8px;margin-top:12px}
+.msgHead{display:flex;align-items:center;gap:9px;margin-bottom:13px;flex-wrap:wrap}
+.msgType{font-family:"Frank Ruhl Libre",serif;font-size:14px;font-weight:700;color:var(--wine)}
+.msgStatus{font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px}
+.statusSent{background:#D9EAD3;color:#2D6117}
+.statusPending{background:#F6E8C8;color:#92400E}
+.msgBody{margin:0;padding:16px;font-size:13.5px;line-height:1.7;color:var(--ink);white-space:pre-wrap;word-break:break-word;font-family:inherit;background:#FBF6EC;border-radius:10px;max-height:340px;overflow-y:auto;direction:rtl;text-align:right;border:1px solid var(--line)}
+.msgActions{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap;align-items:center}
+.sendLabel{font-size:11.5px;color:var(--ink-soft);font-weight:600;margin-left:2px}
+.btnWa{background:#25D366;color:#fff;padding:8px 14px;border-radius:9px;font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:5px}
+.btnWa:hover{background:#1eb955}
 
-.brandsGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.brandCard{background:#fff;border:1px solid #ececec;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
-.brandHead{display:flex;align-items:center;gap:10px}
-.brandType{font-size:11px;color:#9ca3af}
-.brandLogo{width:100%;height:100px;object-fit:contain;background:#faf9f7;border-radius:10px}
-.brandLogoEmpty{width:100%;height:100px;display:flex;align-items:center;justify-content:center;background:#faf9f7;border-radius:10px;color:#cbd5e1;font-size:12px}
+/* brand cards — bottle labels */
+.brandsGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.brandCard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px;box-shadow:0 3px 14px rgba(42,33,28,.06);position:relative;overflow:hidden}
+
+.brandHead{display:flex;align-items:center;gap:11px;margin-top:4px}
+.brandName{font-family:"Frank Ruhl Libre",serif}
+.brandType{font-size:11.5px;color:var(--ink-soft)}
+.brandLogo{width:100%;height:130px;object-fit:contain;background:#fff;border-radius:12px;border:1px solid var(--line);padding:10px}
+.brandLogoEmpty{width:100%;height:130px;display:flex;align-items:center;justify-content:center;background:#FBF6EC;border-radius:12px;color:#C9BFB0;font-size:13px;border:1px dashed var(--line);font-family:"Frank Ruhl Libre",serif}
+
+/* quick access buttons */
+.quickRow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.quickBtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;border-radius:12px;background:#fff;border:1.5px solid var(--line);color:var(--ink);font-size:12px;font-weight:700;transition:all .15s;text-decoration:none}
+.quickBtn:hover{border-color:var(--brass);background:#FBF6EC;transform:translateY(-2px)}
+.quickBtn span:first-child{font-size:22px}
+.quickBtnOff{opacity:.4;pointer-events:none}
+.brandNext{background:#FBF6EC;border:1px solid var(--line);border-radius:11px;padding:11px 14px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.brandNextLabel{font-size:11px;color:var(--ink-soft);font-weight:600}
+.brandNextVal{font-size:13px;font-weight:700;color:var(--ink)}
+.brandNextCount{margin-right:auto;font-size:11.5px;font-weight:700;color:var(--wine);background:#fff;border:1px solid var(--line);padding:3px 10px;border-radius:100px}
 .brandActs{display:flex;gap:8px;margin-top:4px}
 
-@media(max-width:1024px){.brandsGrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:1024px){.brandsGrid{grid-template-columns:1fr}}
 @media(max-width:640px){
-  .root{padding:0 14px 60px}
-  .header{margin:0 -14px;padding:18px 18px 0}
+  .root{padding:0 16px 60px}
+  .header{margin:0 -16px}
+  .headerInner{padding:18px 18px 14px}
+  .tabs{padding:0 10px;overflow-x:auto;flex-wrap:nowrap}
+  .tab{white-space:nowrap;padding:11px 14px;font-size:13px}
   .statRow{grid-template-columns:repeat(2,1fr)}
   .formGrid{grid-template-columns:1fr}
-  .brandsGrid{grid-template-columns:1fr}
-  .tab{padding:8px 12px;font-size:12px}
+  .h1{font-size:25px}
 }
