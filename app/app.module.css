@@ -150,3 +150,28 @@
   .formGrid{grid-template-columns:1fr}
   .h1{font-size:25px}
 }
+
+/* filter bar */
+.filterBar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:20px}
+.fbtn{border:1.5px solid var(--line);background:var(--surface);color:var(--ink-soft);padding:7px 15px;border-radius:100px;font-size:12.5px;font-weight:600;transition:all .15s}
+.fbtn:hover{background:#F2ECE0}
+.fbtnOn{background:#fff;font-weight:700;border-width:2px}
+
+/* social plan */
+.weekSep{font-family:"Frank Ruhl Libre",serif;font-size:15px;font-weight:700;color:var(--brass);letter-spacing:.04em;margin:24px 0 12px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+.planDay{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:10px;box-shadow:0 2px 8px rgba(42,33,28,.04)}
+.planDayEvent{border-right:4px solid var(--wine);background:linear-gradient(135deg,#FBF6EC,#FBF8F2)}
+.planDayHead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.planDate{font-family:"Frank Ruhl Libre",serif;font-size:15px;font-weight:700;color:var(--ink)}
+.planToday{font-size:10px;font-weight:700;color:#fff;background:var(--wine);padding:2px 9px;border-radius:100px}
+.planEvent{font-size:11px;font-weight:700;color:var(--wine);background:#fff;border:1px solid var(--brass);padding:2px 10px;border-radius:100px;margin-right:auto}
+.planBrandBlock{display:flex;gap:12px;padding:9px 0;border-top:1px solid var(--line)}
+.planBrandBlock:first-of-type{border-top:none}
+.planTasks{display:flex;flex-direction:column;gap:6px;flex:1}
+.planTask{display:flex;gap:9px;align-items:flex-start;padding:8px 11px;border-radius:9px;background:#FBF6EC;border-right:2px solid transparent}
+.planUrgent{border-right-color:#B3261E;background:#FBEEEC}
+.planKey{border-right-color:#2D6117;background:#F1F7EC}
+.planIco{font-size:15px;flex-shrink:0;margin-top:1px}
+.planTaskBody{display:flex;flex-direction:column;gap:1px}
+.planType{font-size:10.5px;font-weight:700;color:var(--ink-soft)}
+.planTitle{font-size:13px;color:var(--ink);line-height:1.4}
