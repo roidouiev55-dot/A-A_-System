@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { BRANDS, BLIST, fmtDate, fmtDateFull, dowHeb, diffDays, buildReminders } from "../lib/core";
+import { buildAllDays, weekLabel, isEventDay as planIsEventDay } from "../lib/socialplan";
 import LockGuard from "./LockGuard";
 import s from "./app.module.css";
 
@@ -27,8 +28,8 @@ export default function AppShell() {
   const TABS = [
     { id: "dashboard", label: "🏠 דשבורד" },
     { id: "events", label: "🎉 אירועים" },
+    { id: "social", label: "📅 תוכנית סושיאל" },
     { id: "messages", label: "💬 הודעות" },
-    { id: "communities", label: "👥 קהילות" },
     { id: "reminders", label: "📨 תזכורות" },
     { id: "brands", label: "🎨 הפקות" },
   ];
@@ -46,8 +47,8 @@ export default function AppShell() {
       <main className={s.main}>
         {tab==="dashboard" && <Dashboard data={data} reminders={reminders} today={today} setTab={setTab}/>}
         {tab==="events" && <Events data={data} reload={reload} unlocked={unlocked} setUnlocked={setUnlocked}/>}
+        {tab==="social" && <SocialPlan data={data} today={today}/>}
         {tab==="messages" && <Messages data={data} reload={reload}/>}
-        {tab==="communities" && <Communities data={data} reload={reload} unlocked={unlocked} setUnlocked={setUnlocked}/>}
         {tab==="reminders" && <Reminders data={data} reminders={reminders} today={today} reload={reload}/>}
         {tab==="brands" && <BrandsTab data={data} reload={reload} unlocked={unlocked} setUnlocked={setUnlocked}/>}
       </main>
@@ -200,7 +201,7 @@ function Messages({ data, reload }) {
     window.open(link || "https://web.whatsapp.com", "_blank");
   }
 
-  const brandComms = event ? (data.communities || []).filter(c => c.brand === event.brand) : [];
+  const brandComm = event ? (data.brandAssets?.[event.brand]?.community_link || "") : "";
 
   return (
     <div>
@@ -229,12 +230,11 @@ function Messages({ data, reload }) {
           <pre className={s.msgBody}>{m.body}</pre>
           <div className={s.msgActions}>
             <button className={s.btnP} onClick={()=>copyMsg(m.body)}>📋 העתק</button>
-            {brandComms.length > 0 && <span className={s.sendLabel}>שלח לקהילה:</span>}
-            {brandComms.map(c => (
-              <button key={c.id} className={s.btnWa} onClick={()=>sendToCommunity(m.body, c.link)} title="מעתיק את ההודעה ופותח את הקהילה">
-                💬 {c.name}
+            {brandComm && (
+              <button className={s.btnWa} onClick={()=>sendToCommunity(m.body, brandComm)} title="מעתיק את ההודעה ופותח את הקהילה">
+                💬 שלח לקהילה
               </button>
-            ))}
+            )}
             {m.status!=="נשלח" && <button className={s.btnG} onClick={()=>markSent(m.id)}>✓ סמן כנשלח</button>}
           </div>
         </div>
@@ -243,48 +243,79 @@ function Messages({ data, reload }) {
   );
 }
 
-// ── Communities ──
-function Communities({ data, reload, unlocked, setUnlocked }) {
-  const [form, setForm] = useState({ brand:"WN", name:"", link:"" });
-  const comms = data.communities || [];
+// ── Social Plan ──
+const CH_ICON = { story: "📱", post: "🖼", comm: "👥" };
+function SocialPlan({ data, today }) {
+  const days = useMemo(() => buildAllDays(data.events), [data.events]);
+  const [brandFilter, setBrandFilter] = useState("all");
 
-  async function add() {
-    if(!form.name) return alert("שם הקהילה חובה");
-    await apiPost("communities", form);
-    setForm({brand:"WN",name:"",link:""});
-    reload();
-  }
-  async function remove(id) { if(confirm("למחוק?")) { await apiDel("communities",{id}); reload(); } }
+  // counts
+  let totals = { story:0, post:0, comm:0 };
+  days.forEach(day => Object.values(day.tasks).forEach(ts => ts.forEach(t => { totals[t.ch]++; })));
 
-  const grouped = {};
-  BLIST.forEach(b => { grouped[b] = comms.filter(c => c.brand === b); });
+  const windowDays = days.filter(d => {
+    const dd = diffDays(today, new Date(d.date));
+    return dd >= -1 && dd <= 21;
+  });
+
+  let curWeek = null;
 
   return (
     <div>
-      <div className={s.card}>
-        <div className={s.cardLabel}>הוספת קהילה חדשה</div>
-        <div className={s.formGrid}>
-          <label className={s.field}><span>הפקה</span><select value={form.brand} onChange={e=>setForm({...form,brand:e.target.value})}>{BLIST.map(b=><option key={b} value={b}>{BRANDS[b].name}</option>)}</select></label>
-          <label className={s.field}><span>שם הקהילה</span><input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="למשל: WINE NOT קהילה ראשית"/></label>
-          <label className={s.fieldW}><span>קישור לקהילה</span><input dir="ltr" value={form.link} onChange={e=>setForm({...form,link:e.target.value})} placeholder="https://chat.whatsapp.com/..."/></label>
-        </div>
-        <div className={s.actions}><button className={s.btnP} onClick={add}>+ הוסף קהילה</button></div>
+      <p className={s.note}>תוכנית התוכן ל-3 השבועות הקרובים — 4 ימי סטורי בשבוע לכל הפקה, פוסט שבועי, 2 הודעות קהילה, וספירה לאחור לכל אירוע. הכל נגזר אוטומטית מהאירועים.</p>
+      <div className={s.statRow}>
+        <div className={s.stat}><span className={s.statN}>{totals.story+totals.post+totals.comm}</span><span className={s.statL}>משימות</span></div>
+        <div className={s.stat}><span className={s.statN}>{totals.story}</span><span className={s.statL}>סטורים</span></div>
+        <div className={s.stat}><span className={s.statN}>{totals.post}</span><span className={s.statL}>פוסטים</span></div>
+        <div className={s.stat}><span className={s.statN}>{totals.comm}</span><span className={s.statL}>הודעות קהילה</span></div>
       </div>
-      <LockGuard onChange={setUnlocked}/>
-      {BLIST.map(b => grouped[b].length > 0 && (
-        <div key={b}>
-          <h3 className={s.secTitle} style={{color:BRANDS[b].text}}>{BRANDS[b].name} · {grouped[b].length} קהילות</h3>
-          <div className={s.list}>{grouped[b].map(c => (
-            <div key={c.id} className={s.row} style={{borderRight:`3px solid ${BRANDS[b].text}`}}>
-              <span className={s.badge} style={{background:BRANDS[b].bg,color:BRANDS[b].text}}>{BRANDS[b].name}</span>
-              <span className={s.rowText}>{c.name}</span>
-              {c.link && <a href={c.link} target="_blank" rel="noreferrer" className={s.link}>פתח ↗</a>}
-              <button className={s.btnSmD} disabled={!unlocked} onClick={()=>remove(c.id)}>🗑</button>
+
+      <div className={s.filterBar}>
+        {[{id:"all",name:"כל ההפקות"},...BLIST.map(id=>({id,name:BRANDS[id].name}))].map(f=>(
+          <button key={f.id} className={`${s.fbtn} ${brandFilter===f.id?s.fbtnOn:""}`}
+            style={brandFilter===f.id&&BRANDS[f.id]?{borderColor:BRANDS[f.id].text,color:BRANDS[f.id].text}:{}}
+            onClick={()=>setBrandFilter(f.id)}>{f.name}</button>
+        ))}
+      </div>
+
+      {windowDays.map(day => {
+        const d = new Date(day.date);
+        const entries = Object.entries(day.tasks).filter(([bid]) => brandFilter==="all" || bid===brandFilter);
+        if (!entries.length) return null;
+        const wl = weekLabel(d);
+        const showWeek = wl !== curWeek; if (showWeek) curWeek = wl;
+        const dd = diffDays(today, d);
+        const dayTag = dd===0?"היום":dd===1?"מחר":dd===-1?"אתמול":"";
+        const anyEvent = entries.some(([bid]) => planIsEventDay(bid, d));
+        return (
+          <div key={day.date}>
+            {showWeek && <div className={s.weekSep}>{wl}</div>}
+            <div className={`${s.planDay} ${anyEvent?s.planDayEvent:""}`}>
+              <div className={s.planDayHead}>
+                <span className={s.planDate}>{fmtDate(d)} · {dowHeb(d)}</span>
+                {dayTag && <span className={s.planToday}>{dayTag}</span>}
+                {anyEvent && <span className={s.planEvent}>🎉 יום אירוע</span>}
+              </div>
+              {entries.map(([bid, ts]) => (
+                <div key={bid} className={s.planBrandBlock}>
+                  <span className={s.badge} style={{background:BRANDS[bid].bg,color:BRANDS[bid].text}}>{BRANDS[bid].name}</span>
+                  <div className={s.planTasks}>
+                    {ts.map((t,i) => (
+                      <div key={i} className={`${s.planTask} ${t.flag==="urgent"?s.planUrgent:t.flag==="key"?s.planKey:""}`}>
+                        <span className={s.planIco}>{CH_ICON[t.ch]}</span>
+                        <div className={s.planTaskBody}>
+                          <span className={s.planType}>{t.type}</span>
+                          <span className={s.planTitle}>{t.title}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}</div>
-        </div>
-      ))}
-      {comms.length===0 && <div className={s.empty}>עוד לא הוספת קהילות. הוסף את קהילות הווטסאפ שלך למעלה.</div>}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -328,7 +359,14 @@ function BrandsTab({ data, reload, unlocked, setUnlocked }) {
   const today = new Date(); today.setHours(0,0,0,0);
 
   async function save(bid) {
-    await apiPut("brands", { brand: bid, logo: draft[bid]?.logo||"", drive_link: draft[bid]?.drive_link||"", canva_templates: draft[bid]?.canva_templates||"" });
+    await apiPut("brands", {
+      brand: bid,
+      logo: draft[bid]?.logo||"",
+      drive_link: draft[bid]?.drive_link||"",
+      canva_templates: draft[bid]?.canva_templates||"",
+      instagram_link: draft[bid]?.instagram_link||"",
+      community_link: draft[bid]?.community_link||"",
+    });
     reload();
   }
 
@@ -351,13 +389,19 @@ function BrandsTab({ data, reload, unlocked, setUnlocked }) {
 
             {!unlocked ? (
               <>
-                {/* quick access */}
+                {/* quick access — 4 buttons */}
                 <div className={s.quickRow}>
                   <a className={`${s.quickBtn} ${!m.drive_link?s.quickBtnOff:""}`} href={m.drive_link||"#"} target="_blank" rel="noreferrer">
-                    <span>📁</span><span>תיקיית דרייב</span>
+                    <span>📁</span><span>דרייב</span>
                   </a>
                   <a className={`${s.quickBtn} ${!m.canva_templates?s.quickBtnOff:""}`} href={m.canva_templates||"#"} target="_blank" rel="noreferrer">
                     <span>🎨</span><span>Canva</span>
+                  </a>
+                  <a className={`${s.quickBtn} ${!m.instagram_link?s.quickBtnOff:""}`} href={m.instagram_link||"#"} target="_blank" rel="noreferrer">
+                    <span>📸</span><span>אינסטגרם</span>
+                  </a>
+                  <a className={`${s.quickBtn} ${!m.community_link?s.quickBtnOff:""}`} href={m.community_link||"#"} target="_blank" rel="noreferrer">
+                    <span>💬</span><span>קהילה</span>
                   </a>
                 </div>
                 {/* next event + count */}
@@ -371,9 +415,11 @@ function BrandsTab({ data, reload, unlocked, setUnlocked }) {
               </>
             ) : (
               <>
-                <label className={s.field}><span>לוגו (URL)</span><input dir="ltr" value={m.logo||""} onChange={e=>setDraft({...draft,[bid]:{...m,logo:e.target.value}})} placeholder="https://...png"/></label>
-                <label className={s.field}><span>תיקיית דרייב</span><input dir="ltr" value={m.drive_link||""} onChange={e=>setDraft({...draft,[bid]:{...m,drive_link:e.target.value}})} placeholder="https://drive.google.com/..."/></label>
-                <label className={s.field}><span>תיקיית Canva</span><input dir="ltr" value={m.canva_templates||""} onChange={e=>setDraft({...draft,[bid]:{...m,canva_templates:e.target.value}})} placeholder="https://canva.com/..."/></label>
+                <label className={s.field}><span>לוגו (URL)</span><input dir="ltr" value={m.logo||""} onChange={e=>setDraft({...draft,[bid]:{...m,logo:e.target.value}})} placeholder="https://i.imgur.com/...png"/></label>
+                <label className={s.field}><span>📁 תיקיית דרייב</span><input dir="ltr" value={m.drive_link||""} onChange={e=>setDraft({...draft,[bid]:{...m,drive_link:e.target.value}})} placeholder="https://drive.google.com/..."/></label>
+                <label className={s.field}><span>🎨 תיקיית Canva</span><input dir="ltr" value={m.canva_templates||""} onChange={e=>setDraft({...draft,[bid]:{...m,canva_templates:e.target.value}})} placeholder="https://canva.com/..."/></label>
+                <label className={s.field}><span>📸 עמוד אינסטגרם</span><input dir="ltr" value={m.instagram_link||""} onChange={e=>setDraft({...draft,[bid]:{...m,instagram_link:e.target.value}})} placeholder="https://instagram.com/..."/></label>
+                <label className={s.field}><span>💬 קהילת ווטסאפ</span><input dir="ltr" value={m.community_link||""} onChange={e=>setDraft({...draft,[bid]:{...m,community_link:e.target.value}})} placeholder="https://chat.whatsapp.com/..."/></label>
                 <div className={s.brandActs}>
                   <button className={s.btnP} onClick={()=>save(bid)}>שמור</button>
                 </div>
