@@ -38,11 +38,16 @@ export default function AppShell() {
     <div className={s.root}>
       <header className={s.header}>
         <div className={s.headerInner}>
-          <div><h1 className={s.h1}>A&A HAFAKOT</h1><p className={s.sub}>מערכת ניהול · אירועים · תזכורות · תוכן</p></div>
+          <div className={s.brandWrap}>
+            <h1 className={s.h1}>A&A HAFAKOT</h1>
+            <p className={s.sub}>מערכת ניהול · אירועים · תזכורות · תוכן</p>
+          </div>
         </div>
-        <nav className={s.tabs}>{TABS.map(t => (
-          <button key={t.id} className={`${s.tab} ${tab===t.id?s.tabOn:""}`} onClick={()=>setTab(t.id)}>{t.label}</button>
-        ))}</nav>
+        <div className={s.tabsBar}>
+          <nav className={s.tabs}>{TABS.map(t => (
+            <button key={t.id} className={`${s.tab} ${tab===t.id?s.tabOn:""}`} onClick={()=>setTab(t.id)}>{t.label}</button>
+          ))}</nav>
+        </div>
       </header>
       <main className={s.main}>
         {tab==="dashboard" && <Dashboard data={data} reminders={reminders} today={today} setTab={setTab}/>}
@@ -352,6 +357,7 @@ function Reminders({ data, reminders, today, reload }) {
 }
 
 // ── Brands ──
+const BRAND_GLOW = { WN:"#E26D7E", MX:"#4FD1C5", BG:"#8FCB6A", WB:"#B794F4" };
 function BrandsTab({ data, reload, unlocked, setUnlocked }) {
   const assets = data.brandAssets || {};
   const [draft, setDraft] = useState(assets);
@@ -379,7 +385,7 @@ function BrandsTab({ data, reload, unlocked, setUnlocked }) {
         const upcoming = brandEvents.filter(e => new Date(e.date) >= today).sort((a,c)=>new Date(a.date)-new Date(c.date));
         const nextEv = upcoming[0];
         return (
-          <div key={bid} className={s.brandCard} style={{borderTop:`5px solid ${b.text}`}}>
+          <div key={bid} className={s.brandCard} style={{borderTop:`4px solid ${BRAND_GLOW[bid]}`, ["--accent"]:BRAND_GLOW[bid]}}>
             <div className={s.brandHead}>
               <span className={s.badge} style={{background:b.bg,color:b.text,fontSize:13}}>{b.name}</span>
               <span className={s.brandType}>{b.type}</span>
