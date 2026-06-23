@@ -1,24 +1,35 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px}
 :root{
-  --paper:#EFE9DC;
-  --paper-2:#E7DFCE;
-  --surface:#FBF8F2;
-  --ink:#2A211C;
-  --ink-soft:#6B5D52;
-  --wine:#6E2230;
-  --wine-deep:#4A1622;
-  --brass:#B08847;
-  --brass-light:#C9A24B;
-  --line:#E0D6C4;
+  --bg:#161019;
+  --bg-2:#1E1623;
+  --glass:rgba(255,255,255,.05);
+  --glass-2:rgba(255,255,255,.08);
+  --glass-3:rgba(255,255,255,.12);
+  --line:rgba(255,255,255,.10);
+  --line-2:rgba(255,255,255,.16);
+  --ink:#F3ECE4;
+  --ink-soft:#A99FAC;
+  --ink-mute:#7C7184;
+  --gold:#E3B45A;
+  --gold-soft:#F1D08F;
+  --wine:#C24A5E;
+  --wine-deep:#8E2E40;
 }
 body{
-  font-family:"Assistant",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  background:var(--paper);
+  font-family:"Heebo",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   color:var(--ink);
   direction:rtl;
   min-height:100vh;
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(900px circle at 88% -5%, rgba(227,180,90,.13), transparent 55%),
+    radial-gradient(800px circle at 5% 105%, rgba(142,46,64,.22), transparent 50%),
+    linear-gradient(180deg,#1A1320 0%,#161019 100%);
+  background-attachment:fixed;
 }
 button{font-family:inherit;cursor:pointer;border:none;background:none}
 input,select,textarea{font-family:inherit}
 a{color:inherit}
+::selection{background:rgba(227,180,90,.3)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
