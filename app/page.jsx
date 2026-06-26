@@ -1,2 +1,3 @@
 import AppShell from "./AppShell";
-export default function Home() { return <AppShell />; }
+import LoginGate from "./LoginGate";
+export default function Home() { return <LoginGate><AppShell /></LoginGate>; }

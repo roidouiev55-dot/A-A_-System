@@ -25,7 +25,19 @@ export default function AppShell() {
   const [loading, setLoading] = useState(true);
   const [unlocked, setUnlocked] = useState(false);
 
-  const reload = useCallback(() => apiGet("data").then(d => { setData(d); setLoading(false); }), []);
+  const [loadErr, setLoadErr] = useState("");
+  const reload = useCallback(async () => {
+    try {
+      const d = await apiGet("data");
+      if (d && Array.isArray(d.events)) { setData(d); setLoadErr(""); setLoading(false); return; }
+      // no usable data — is it an auth problem? if so, bounce back to the login gate
+      const a = await apiGet("auth");
+      if (!a?.authed) { window.location.reload(); return; }
+      setLoadErr(d?.error || "שגיאה בטעינת הנתונים"); setLoading(false);
+    } catch {
+      setLoadErr("שגיאת רשת בטעינת הנתונים"); setLoading(false);
+    }
+  }, []);
   useEffect(() => { reload(); }, [reload]);
 
   // local mutators — instant UI, no reload lag
@@ -35,6 +47,7 @@ export default function AppShell() {
   const today = new Date(); today.setHours(0,0,0,0);
 
   if (loading) return <div className={s.loading}>טוען את המערכת…</div>;
+  if (loadErr) return <div className={s.loading}>{loadErr} · <button onClick={()=>{setLoading(true);reload();}} style={{textDecoration:"underline",background:"none",border:"none",color:"inherit",cursor:"pointer"}}>נסה שוב</button></div>;
 
   const TABS = [
     { id:"dashboard", label:"🏠 דשבורד" },
