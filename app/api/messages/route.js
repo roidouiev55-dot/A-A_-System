@@ -1,22 +1,33 @@
 export const dynamic = "force-dynamic";
 import { getSupabase } from "../../../lib/supabase";
 import { buildGeminiPrompt } from "../../../lib/prompts";
+import { validate, ValidationError } from "../../../lib/validate";
 import { NextResponse } from "next/server";
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 const MODEL = "gemini-2.5-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
+function bad(e) {
+  if (e instanceof ValidationError) return NextResponse.json({ error: e.message }, { status: 422 });
+  return NextResponse.json({ error: String(e) }, { status: 400 });
+}
+
 export async function POST(req) {
   const { action, ...body } = await req.json();
 
   if (action === "generate") {
-    const { event, msgType } = body;
-    const prompt = buildGeminiPrompt(event, msgType || "ערך");
+    let event, msgType;
     try {
-      const res = await fetch(`${GEMINI_URL}?key=${GEMINI_KEY}`, {
+      event = validate.messageEvent(body.event);
+      msgType = validate.msgType(body.msgType);
+    } catch (e) { return bad(e); }
+
+    const prompt = buildGeminiPrompt(event, msgType);
+    try {
+      const res = await fetch(GEMINI_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_KEY },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: { temperature: 0.85, maxOutputTokens: 1024 },
@@ -32,7 +43,7 @@ export async function POST(req) {
 
       const { data: saved, error } = await getSupabase()
         .from("messages")
-        .insert({ event_id: event.id, brand: event.brand, msg_type: msgType || "ערך", body: text, status: "לא נשלח" })
+        .insert({ event_id: event.id, brand: event.brand, msg_type: msgType, body: text, status: "לא נשלח" })
         .select()
         .single();
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
@@ -43,14 +54,19 @@ export async function POST(req) {
   }
 
   if (action === "updateStatus") {
-    const { id, status } = body;
-    const { data, error } = await getSupabase().from("messages").update({ status }).eq("id", id).select().single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json(data);
+    try {
+      const id = String(body.id || "").slice(0, 200);
+      if (!id) throw new ValidationError("מזהה (id) חסר");
+      const status = validate.msgStatus(body.status);
+      const { data, error } = await getSupabase().from("messages").update({ status }).eq("id", id).select().single();
+      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json(data);
+    } catch (e) { return bad(e); }
   }
 
   if (action === "delete") {
-    const { id } = body;
+    const id = String(body.id || "").slice(0, 200);
+    if (!id) return NextResponse.json({ error: "מזהה (id) חסר" }, { status: 422 });
     const { error } = await getSupabase().from("messages").delete().eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ ok: true });
