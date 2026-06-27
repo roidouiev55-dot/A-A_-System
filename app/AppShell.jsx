@@ -1,13 +1,28 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { BRANDS, BLIST, fmtDate, fmtDateFull, fmtDateHeb, dowHeb, diffDays, buildReminders, addDays, HEB_MONTHS } from "../lib/core";
-import { buildAllDays, weekLabel, isEventDay as planIsEventDay } from "../lib/socialplan";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { BRANDS, BLIST, fmtDate, fmtDateFull, fmtDateHeb, dowHeb, diffDays, buildReminders, addDays, HEB_MONTHS, toDateInput, dateInputToISO } from "../lib/core";
+import { buildAllDays } from "../lib/socialplan";
 import LockGuard from "./LockGuard";
 import s from "./app.module.css";
 
-const apiPost = (path, body) => fetch(`/api/${path}`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) }).then(r=>r.json());
-const apiPut = (path, body) => fetch(`/api/${path}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) }).then(r=>r.json());
-const apiDel = (path, body) => fetch(`/api/${path}`, { method:"DELETE", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) }).then(r=>r.json());
+// Mutating calls throw on HTTP error or {error} payload, so callers can roll
+// back optimistic UI instead of silently diverging from the database.
+async function apiSend(method, path, body) {
+  const res = await fetch(`/api/${path}`, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  let json = null;
+  try { json = await res.json(); } catch {}
+  if (!res.ok || (json && json.error)) {
+    throw new Error((json && json.error) || `שגיאת שרת (${res.status})`);
+  }
+  return json;
+}
+const apiPost = (path, body) => apiSend("POST", path, body);
+const apiPut = (path, body) => apiSend("PUT", path, body);
+const apiDel = (path, body) => apiSend("DELETE", path, body);
 const apiGet = (path) => fetch(`/api/${path}`).then(r=>r.json());
 
 function relDay(today, date) {
@@ -43,6 +58,30 @@ export default function AppShell() {
   // local mutators — instant UI, no reload lag
   const patch = useCallback((fn) => setData(prev => fn(structuredClone(prev))), []);
 
+  // keep the latest committed data for rollback snapshots
+  const dataRef = useRef(null);
+  useEffect(() => { dataRef.current = data; }, [data]);
+
+  // transient error toast
+  const [toast, setToast] = useState(null);
+  useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(null), 4000); return () => clearTimeout(t); }, [toast]);
+  const notify = useCallback((msg) => setToast({ msg }), []);
+
+  // optimistic mutation with rollback: apply patch, call API, restore snapshot
+  // and surface the error if the call fails. Returns the API result, or null on
+  // failure. Pass a null optimistic fn for "call first, apply result" flows.
+  const mutate = useCallback(async (optimisticFn, apiCall) => {
+    const snapshot = dataRef.current;
+    if (optimisticFn) patch(optimisticFn);
+    try {
+      return await apiCall();
+    } catch (e) {
+      if (optimisticFn) setData(snapshot);
+      setToast({ msg: e?.message || "הפעולה נכשלה" });
+      return null;
+    }
+  }, [patch]);
+
   const reminders = useMemo(() => data ? buildReminders(data.events) : [], [data]);
   const today = new Date(); today.setHours(0,0,0,0);
 
@@ -75,15 +114,16 @@ export default function AppShell() {
         </div>
       </header>
       <main className={s.main}>
-        {tab==="dashboard" && <Dashboard data={data} reminders={reminders} today={today} setTab={setTab} patch={patch}/>}
-        {tab==="events" && <Events data={data} patch={patch} today={today} unlocked={unlocked} setUnlocked={setUnlocked}/>}
+        {tab==="dashboard" && <Dashboard data={data} reminders={reminders} today={today} setTab={setTab} mutate={mutate}/>}
+        {tab==="events" && <Events data={data} patch={patch} mutate={mutate} notify={notify} today={today} unlocked={unlocked} setUnlocked={setUnlocked}/>}
         {tab==="social" && <SocialPlan data={data} today={today}/>}
-        {tab==="messages" && <Messages data={data} patch={patch} today={today}/>}
-        {tab==="library" && <Library data={data} patch={patch}/>}
-        {tab==="reminders" && <Reminders data={data} reminders={reminders} today={today} patch={patch}/>}
-        {tab==="brands" && <BrandsTab data={data} patch={patch} today={today} unlocked={unlocked} setUnlocked={setUnlocked}/>}
+        {tab==="messages" && <Messages data={data} patch={patch} mutate={mutate} notify={notify} today={today}/>}
+        {tab==="library" && <Library data={data} mutate={mutate}/>}
+        {tab==="reminders" && <Reminders data={data} reminders={reminders} today={today} mutate={mutate}/>}
+        {tab==="brands" && <BrandsTab data={data} mutate={mutate} today={today} unlocked={unlocked} setUnlocked={setUnlocked}/>}
       </main>
       <footer className={s.footer}>A&A HAFAKOT · מערכת ניהול 2026</footer>
+      {toast && <div className={s.toast} role="alert">{toast.msg}</div>}
     </div>
   );
 }
@@ -91,7 +131,7 @@ export default function AppShell() {
 // ════ DASHBOARD — daily task center ════
 function startOfWeek(today) { const d = new Date(today); d.setDate(d.getDate() - d.getDay()); d.setHours(0,0,0,0); return d; }
 
-function Dashboard({ data, reminders, today, setTab, patch }) {
+function Dashboard({ data, reminders, today, setTab, mutate }) {
   const upcoming = [...data.events].filter(e => new Date(e.date) >= today).sort((a,b)=>new Date(a.date)-new Date(b.date));
   const next = upcoming[0];
   const remSent = data.remindersSent || {};
@@ -122,7 +162,7 @@ function Dashboard({ data, reminders, today, setTab, patch }) {
     });
   });
   // social content tasks today
-  const todayKey = today.toISOString().slice(0,10);
+  const todayKey = toDateInput(today);
   Object.keys(todayPlan).forEach(bid => {
     todayPlan[bid].forEach((t, i) => {
       const id = "plan_" + todayKey + "_" + bid + "_" + i;
@@ -145,11 +185,15 @@ function Dashboard({ data, reminders, today, setTab, patch }) {
 
   async function mark(a, done) {
     if (a.source === "reminder") {
-      patch(d => { d.remindersSent = {...d.remindersSent}; if(done) d.remindersSent[a.id]={id:a.id,sent_at:new Date().toISOString()}; else delete d.remindersSent[a.id]; return d; });
-      await apiPut("reminders", { id:a.id, sent:done });
+      await mutate(
+        d => { d.remindersSent = {...d.remindersSent}; if(done) d.remindersSent[a.id]={id:a.id,sent_at:new Date().toISOString()}; else delete d.remindersSent[a.id]; return d; },
+        () => apiPut("reminders", { id:a.id, sent:done }),
+      );
     } else {
-      patch(d => { d.tasksDone = {...d.tasksDone}; if(done) d.tasksDone[a.id]={id:a.id,done_at:new Date().toISOString()}; else delete d.tasksDone[a.id]; return d; });
-      await apiPut("tasks", { id:a.id, done, label:a.label||"", brand:a.brand });
+      await mutate(
+        d => { d.tasksDone = {...d.tasksDone}; if(done) d.tasksDone[a.id]={id:a.id,done_at:new Date().toISOString()}; else delete d.tasksDone[a.id]; return d; },
+        () => apiPut("tasks", { id:a.id, done, label:a.label||"", brand:a.brand }),
+      );
     }
   }
 
@@ -255,8 +299,7 @@ function HebDatePicker({ value, onChange }) {
 }
 
 // ════ EVENTS ════
-const uidNo = () => undefined;
-function Events({ data, patch, today, unlocked, setUnlocked }) {
+function Events({ data, patch, mutate, notify, today, unlocked, setUnlocked }) {
   const empty = { brand:"WN", name:"", date:"", location:"", link:"", full_details:"" };
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState(null);
@@ -266,23 +309,31 @@ function Events({ data, patch, today, unlocked, setUnlocked }) {
   async function save() {
     if(!form.name||!form.date) return alert("שם ותאריך הם שדות חובה");
     setBusy(true);
-    const payload = { brand:form.brand, name:form.name.trim(), date:new Date(form.date).toISOString(), location:form.location.trim(), link:form.link.trim(), full_details:(form.full_details||"").trim() };
-    if (editId) {
-      const updated = await apiPut("events", { id:editId, ...payload });
-      patch(d => { d.events = d.events.map(e => e.id===editId ? updated : e); return d; });
-      setEditId(null);
-    } else {
-      const created = await apiPost("events", payload);
-      patch(d => { d.events = [...d.events, created]; return d; });
+    const payload = { brand:form.brand, name:form.name.trim(), date:dateInputToISO(form.date), location:form.location.trim(), link:form.link.trim(), full_details:(form.full_details||"").trim() };
+    try {
+      if (editId) {
+        const updated = await apiPut("events", { id:editId, ...payload });
+        patch(d => { d.events = d.events.map(e => e.id===editId ? updated : e); return d; });
+        setEditId(null);
+      } else {
+        const created = await apiPost("events", payload);
+        patch(d => { d.events = [...d.events, created]; return d; });
+      }
+      setForm(empty); // only clear the form once the save actually succeeded
+    } catch (e) {
+      notify(e?.message || "שמירת האירוע נכשלה");
+    } finally {
+      setBusy(false);
     }
-    setForm(empty); setBusy(false);
   }
   async function remove(id) {
     if(!confirm("למחוק את האירוע?")) return;
-    patch(d => { d.events = d.events.filter(e => e.id!==id); return d; });
-    await apiDel("events", { id });
+    await mutate(
+      d => { d.events = d.events.filter(e => e.id!==id); return d; },
+      () => apiDel("events", { id }),
+    );
   }
-  function startEdit(e) { setEditId(e.id); setForm({ brand:e.brand, name:e.name, date:e.date.slice(0,10), location:e.location||"", link:e.link||"", full_details:e.full_details||"" }); }
+  function startEdit(e) { setEditId(e.id); setForm({ brand:e.brand, name:e.name, date:toDateInput(e.date), location:e.location||"", link:e.link||"", full_details:e.full_details||"" }); }
 
   return (
     <div>
@@ -352,7 +403,7 @@ function SocialPlan({ data, today }) {
         </div>
         <div className={s.planControlBtns}>
           <button className={`${s.fbtn} ${!planStart?s.fbtnOn:""}`} onClick={()=>setPlanStart(null)}>מהיום</button>
-          <button className={s.btnP} onClick={()=>setPlanStart(new Date().toISOString().slice(0,10))}>🔄 תוכנית חדשה מהיום</button>
+          <button className={s.btnP} onClick={()=>setPlanStart(toDateInput(new Date()))}>🔄 תוכנית חדשה מהיום</button>
         </div>
       </div>
 
@@ -376,11 +427,11 @@ function SocialPlan({ data, today }) {
         const d = new Date(day.date);
         const entries = Object.entries(day.tasks).filter(([bid]) => brandFilter==="all" || bid===brandFilter);
         if (!entries.length) return null;
-        const wl = weekLabel(d);
+        const wl = day.week;
         const showWeek = wl !== curWeek; if (showWeek) curWeek = wl;
         const tag = relDay(today, d);
         const isToday = diffDays(today,d)===0;
-        const anyEvent = entries.some(([bid]) => planIsEventDay(bid, d));
+        const anyEvent = entries.some(([bid]) => day.eventBrands.includes(bid));
         return (
           <div key={day.date}>
             {showWeek && <div className={s.weekSep}>{wl}</div>}
@@ -415,7 +466,7 @@ function SocialPlan({ data, today }) {
 }
 
 // ════ MESSAGES ════
-function Messages({ data, patch, today }) {
+function Messages({ data, patch, mutate, today }) {
   const sorted = [...data.events].sort((a,b)=>new Date(a.date)-new Date(b.date));
   const [selId, setSelId] = useState(sorted[0]?.id || "");
   const [msgType, setMsgType] = useState("ערך");
@@ -428,18 +479,26 @@ function Messages({ data, patch, today }) {
   async function generate() {
     if(!event) return;
     setBusy(true); setErr("");
-    const res = await apiPost("messages", { action:"generate", event, msgType });
-    if (res.error) { setErr("שגיאה ביצירה: " + res.error); setBusy(false); return; }
-    if (res.message) patch(d => { d.messages = [res.message, ...d.messages]; return d; });
-    setBusy(false);
+    try {
+      const res = await apiPost("messages", { action:"generate", event, msgType });
+      if (res?.message) patch(d => { d.messages = [res.message, ...d.messages]; return d; });
+    } catch (e) {
+      setErr("שגיאה ביצירה: " + (e?.message || ""));
+    } finally {
+      setBusy(false);
+    }
   }
   async function markSent(id) {
-    patch(d => { d.messages = d.messages.map(m => m.id===id?{...m,status:"נשלח"}:m); return d; });
-    await apiPost("messages", { action:"updateStatus", id, status:"נשלח" });
+    await mutate(
+      d => { d.messages = d.messages.map(m => m.id===id?{...m,status:"נשלח"}:m); return d; },
+      () => apiPost("messages", { action:"updateStatus", id, status:"נשלח" }),
+    );
   }
   async function del(id) {
-    patch(d => { d.messages = d.messages.filter(m => m.id!==id); return d; });
-    await apiPost("messages", { action:"delete", id });
+    await mutate(
+      d => { d.messages = d.messages.filter(m => m.id!==id); return d; },
+      () => apiPost("messages", { action:"delete", id }),
+    );
   }
   async function copyMsg(t) { await navigator.clipboard?.writeText(t); }
   async function sendComm(t) {
@@ -493,12 +552,14 @@ function Messages({ data, patch, today }) {
 }
 
 // ════ REMINDERS ════
-function Reminders({ data, reminders, today, patch }) {
+function Reminders({ data, reminders, today, mutate }) {
   const sent = data.remindersSent || {};
   async function toggle(id) {
     const isSent = !!sent[id];
-    patch(d => { d.remindersSent = {...d.remindersSent}; if(isSent) delete d.remindersSent[id]; else d.remindersSent[id] = { id, sent_at:new Date().toISOString() }; return d; });
-    await apiPut("reminders", { id, sent: !isSent });
+    await mutate(
+      d => { d.remindersSent = {...d.remindersSent}; if(isSent) delete d.remindersSent[id]; else d.remindersSent[id] = { id, sent_at:new Date().toISOString() }; return d; },
+      () => apiPut("reminders", { id, sent: !isSent }),
+    );
   }
   return (
     <div>
@@ -533,7 +594,7 @@ function Reminders({ data, reminders, today, patch }) {
 
 // ════ BRANDS ════
 const BRAND_GLOW = { WN:"#E26D7E", MX:"#4FD1C5", BG:"#8FCB6A", WB:"#B794F4" };
-function BrandsTab({ data, patch, today, unlocked, setUnlocked }) {
+function BrandsTab({ data, mutate, today, unlocked, setUnlocked }) {
   const assets = data.brandAssets || {};
   const [draft, setDraft] = useState(assets);
   useEffect(() => setDraft(data.brandAssets || {}), [data.brandAssets]);
@@ -544,8 +605,10 @@ function BrandsTab({ data, patch, today, unlocked, setUnlocked }) {
       canva_templates: draft[bid]?.canva_templates||"", instagram_link: draft[bid]?.instagram_link||"",
       community_link: draft[bid]?.community_link||"",
     };
-    patch(d => { d.brandAssets = {...d.brandAssets, [bid]: {brand:bid, ...fields}}; return d; });
-    await apiPut("brands", { brand: bid, ...fields });
+    await mutate(
+      d => { d.brandAssets = {...d.brandAssets, [bid]: {brand:bid, ...fields}}; return d; },
+      () => apiPut("brands", { brand: bid, ...fields }),
+    );
   }
 
   return (
@@ -594,7 +657,7 @@ function BrandsTab({ data, patch, today, unlocked, setUnlocked }) {
 }
 
 // ════ LIBRARY — asset repository of all generated messages ════
-function Library({ data, patch }) {
+function Library({ data, mutate }) {
   const [brandFilter, setBrandFilter] = useState("all");
   const [usedFilter, setUsedFilter] = useState("all"); // all / used / unused
   const msgs = [...(data.messages||[])];
@@ -609,13 +672,17 @@ function Library({ data, patch }) {
   function eventName(eid) { return data.events.find(e => e.id === eid)?.name || "אירוע נמחק"; }
   async function toggleUsed(m) {
     const ns = m.status === "נשלח" ? "לא נשלח" : "נשלח";
-    patch(d => { d.messages = d.messages.map(x => x.id===m.id?{...x,status:ns}:x); return d; });
-    await apiPost("messages", { action:"updateStatus", id:m.id, status:ns });
+    await mutate(
+      d => { d.messages = d.messages.map(x => x.id===m.id?{...x,status:ns}:x); return d; },
+      () => apiPost("messages", { action:"updateStatus", id:m.id, status:ns }),
+    );
   }
   async function del(id) {
     if(!confirm("למחוק מהמאגר?")) return;
-    patch(d => { d.messages = d.messages.filter(x => x.id!==id); return d; });
-    await apiPost("messages", { action:"delete", id });
+    await mutate(
+      d => { d.messages = d.messages.filter(x => x.id!==id); return d; },
+      () => apiPost("messages", { action:"delete", id }),
+    );
   }
   async function copy(t){ await navigator.clipboard?.writeText(t); }
 
