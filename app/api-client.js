@@ -19,4 +19,4 @@ async function apiSend(method, path, body) {
 export const apiPost = (path, body) => apiSend("POST", path, body);
 export const apiPut = (path, body) => apiSend("PUT", path, body);
 export const apiDel = (path, body) => apiSend("DELETE", path, body);
-export const apiGet = (path) => fetch(`/api/${path}`).then(r => r.json());
+export const apiGet = (path) => fetch(`/api/${path}`, { cache: "no-store" }).then(r => r.json());

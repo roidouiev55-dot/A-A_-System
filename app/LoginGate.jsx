@@ -1,9 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 
-// Wraps the app behind the shared password. Real enforcement is server-side
-// (middleware returns 401); this is the UX layer that collects the password
-// and only renders children once the session cookie is valid.
+// Wraps the app behind the shared password. Real enforcement is server-side:
+// middleware returns 401 on every protected /api route without a valid session.
+// The gate is driven by that real 401 — we probe the protected /api/data
+// endpoint (no-store, so a cached auth response can't leak a stale "logged in"
+// state) and only render the app when it does NOT come back 401.
 export default function LoginGate({ children }) {
   const [authed, setAuthed] = useState(null); // null = checking
   const [pw, setPw] = useState("");
@@ -11,9 +13,8 @@ export default function LoginGate({ children }) {
   const [err, setErr] = useState("");
 
   useEffect(() => {
-    fetch("/api/auth")
-      .then(r => r.json())
-      .then(d => setAuthed(!!d.authed))
+    fetch("/api/data", { cache: "no-store" })
+      .then(r => setAuthed(r.status !== 401)) // 401 → must log in; anything else → session ok
       .catch(() => setAuthed(false));
   }, []);
 
