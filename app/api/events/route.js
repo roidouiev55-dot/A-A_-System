@@ -29,8 +29,14 @@ export async function PUT(req) {
 export async function DELETE(req) {
   try {
     const { id } = validate.eventUpdate(await req.json()); // reuse: requires valid id
-    const { error } = await getSupabase().from("events").delete().eq("id", id);
+    // .select() so we can confirm a row was actually removed — a delete that
+    // matches nothing (wrong id / missing write permission) otherwise returns
+    // "ok" while the row survives and reappears on the next refresh.
+    const { data, error } = await getSupabase().from("events").delete().eq("id", id).select();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ ok: true });
+    if (!data || data.length === 0) {
+      return NextResponse.json({ error: "האירוע לא נמחק — ייתכן שכבר נמחק או שאין הרשאת כתיבה ל-Supabase" }, { status: 404 });
+    }
+    return NextResponse.json({ ok: true, deleted: data.length });
   } catch (e) { return bad(e); }
 }
