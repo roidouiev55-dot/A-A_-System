@@ -25,7 +25,7 @@ async function callGemini(prompt) {
   if (!GEMINI_KEY) throw new Error("מפתח Gemini לא מוגדר בשרת");
   const payload = JSON.stringify({
     contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.85, maxOutputTokens: 1024 },
+    generationConfig: { temperature: 0.85, maxOutputTokens: 2000, thinkingConfig: { thinkingBudget: 0 } },
   });
   let lastErr = "Gemini: כשל לא ידוע";
   for (let attempt = 0; attempt <= GEMINI_RETRIES; attempt++) {
