@@ -76,12 +76,15 @@ export async function POST(req) {
     try {
       const text = await callGemini(prompt);
 
+      // set created_at explicitly: GET /api/data orders messages by it, so a
+      // null value would mis-sort or hide a freshly generated message after a refresh.
       const { data: saved, error } = await getSupabase()
         .from("messages")
-        .insert({ event_id: event.id, brand: event.brand, msg_type: msgType, body: text, status: "לא נשלח" })
+        .insert({ event_id: event.id, brand: event.brand, msg_type: msgType, body: text, status: "לא נשלח", created_at: new Date().toISOString() })
         .select()
         .single();
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      if (!saved) return NextResponse.json({ error: "ההודעה לא נשמרה ב-Supabase" }, { status: 500 });
       return NextResponse.json({ message: saved });
     } catch (e) {
       return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });
