@@ -201,7 +201,7 @@ function Dashboard({ data, reminders, today, setTab, mutate }) {
     <div>
       {/* hero */}
       {next ? (
-        <div className={s.hero} style={{["--accent"]:({WN:"#E26D7E",MX:"#4FD1C5",BG:"#8FCB6A",WB:"#B794F4"})[next.brand]}}>
+        <div className={s.hero} style={{["--accent"]:BRANDS[next.brand].glow}}>
           <div className={s.heroLabel}>האירוע הקרוב</div>
           <div className={s.heroMain}>
             <span className={s.badge} style={{background:BRANDS[next.brand].bg,color:BRANDS[next.brand].text}}>{BRANDS[next.brand].name}</span>
@@ -258,7 +258,7 @@ function Dashboard({ data, reminders, today, setTab, mutate }) {
           const bNext = bEvents[0];
           const bMsgs = data.messages.filter(m => m.brand === bid && m.status === "לא נשלח").length;
           return (
-            <div key={bid} className={s.brandStatus} style={{borderRight:`3px solid ${({WN:"#E26D7E",MX:"#4FD1C5",BG:"#8FCB6A",WB:"#B794F4"})[bid]}`}}>
+            <div key={bid} className={s.brandStatus} style={{borderRight:`3px solid ${BRANDS[bid].glow}`}}>
               <span className={s.badge} style={{background:BRANDS[bid].bg,color:BRANDS[bid].text}}>{BRANDS[bid].name}</span>
               <span className={s.brandStatusNext}>{bNext ? `${fmtDateHeb(bNext.date)} · ${relDay(today,bNext.date)}` : "אין אירוע"}</span>
               {bMsgs>0 && <span className={s.brandStatusMsg}>{bMsgs} הודעות לשליחה</span>}
@@ -593,7 +593,6 @@ function Reminders({ data, reminders, today, mutate }) {
 }
 
 // ════ BRANDS ════
-const BRAND_GLOW = { WN:"#E26D7E", MX:"#4FD1C5", BG:"#8FCB6A", WB:"#B794F4" };
 function BrandsTab({ data, mutate, today, unlocked, setUnlocked }) {
   const assets = data.brandAssets || {};
   const [draft, setDraft] = useState(assets);
@@ -619,7 +618,7 @@ function BrandsTab({ data, mutate, today, unlocked, setUnlocked }) {
         const bEvents = data.events.filter(e => e.brand===bid && new Date(e.date)>=today).sort((a,c)=>new Date(a.date)-new Date(c.date));
         const nextEv = bEvents[0];
         return (
-          <div key={bid} className={s.brandCard} style={{borderTop:`4px solid ${BRAND_GLOW[bid]}`, ["--accent"]:BRAND_GLOW[bid]}}>
+          <div key={bid} className={s.brandCard} style={{borderTop:`4px solid ${b.glow}`, ["--accent"]:b.glow}}>
             <div className={s.brandHead}>
               <span className={s.badge} style={{background:b.bg,color:b.text,fontSize:13}}>{b.name}</span>
               <span className={s.brandType}>{b.type}</span>
