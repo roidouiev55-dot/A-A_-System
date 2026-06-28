@@ -34,14 +34,36 @@ export async function DELETE(req) {
     let raw = new URL(req.url).searchParams.get("id");
     if (!raw) { const b = await req.json().catch(() => ({})); raw = b?.id; }
     const id = validate.id(raw);
-    // .select() so we can confirm a row was actually removed — a delete that
-    // matches nothing (wrong id / missing write permission) otherwise returns
-    // "ok" while the row survives and reappears on the next refresh.
+
+    // .select() so we can confirm a row was actually removed.
     const { data, error } = await getSupabase().from("events").delete().eq("id", id).select();
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+    // ── TEMP DIAGNOSTICS — log the full Supabase response (revert once root-caused) ──
+    console.error("[DELETE /api/events] receivedId:", id);
+    console.error("[DELETE /api/events] data:", JSON.stringify(data));
+    console.error("[DELETE /api/events] error:", error ? {
+      code: error.code, message: error.message, details: error.details, hint: error.hint,
+    } : null);
+    console.error("[DELETE /api/events] rawError:", error);
+
+    // TEMP: surface the real Supabase error instead of a generic message
+    if (error) {
+      return NextResponse.json(
+        { stage: "supabase-error", receivedId: id, code: error.code, message: error.message, details: error.details, hint: error.hint },
+        { status: 500 },
+      );
+    }
+    // TEMP: 0 rows deleted with NO db error → return the actual (empty) response so
+    // the network/log shows it's a "no row matched / RLS-blocked" case, not a crash.
     if (!data || data.length === 0) {
-      return NextResponse.json({ error: "האירוע לא נמחק — ייתכן שכבר נמחק או שאין הרשאת כתיבה ל-Supabase" }, { status: 404 });
+      return NextResponse.json(
+        { stage: "no-rows-deleted", receivedId: id, data, note: "Supabase returned no error but deleted 0 rows" },
+        { status: 400 },
+      );
     }
     return NextResponse.json({ ok: true, deleted: data.length });
-  } catch (e) { return bad(e); }
+  } catch (e) {
+    console.error("[DELETE /api/events] threw:", e);
+    return bad(e);
+  }
 }
