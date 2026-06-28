@@ -28,7 +28,12 @@ export async function PUT(req) {
 
 export async function DELETE(req) {
   try {
-    const { id } = validate.eventUpdate(await req.json()); // reuse: requires valid id
+    // id arrives in the query string (?id=). DELETE request bodies are unreliable
+    // — proxies/CDNs can strip them, leaving req.json() empty so the id never
+    // reaches the handler. Fall back to the JSON body for backwards compatibility.
+    let raw = new URL(req.url).searchParams.get("id");
+    if (!raw) { const b = await req.json().catch(() => ({})); raw = b?.id; }
+    const id = validate.id(raw);
     // .select() so we can confirm a row was actually removed — a delete that
     // matches nothing (wrong id / missing write permission) otherwise returns
     // "ok" while the row survives and reappears on the next refresh.

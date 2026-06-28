@@ -18,5 +18,10 @@ async function apiSend(method, path, body) {
 
 export const apiPost = (path, body) => apiSend("POST", path, body);
 export const apiPut = (path, body) => apiSend("PUT", path, body);
-export const apiDel = (path, body) => apiSend("DELETE", path, body);
+// DELETE bodies are unreliable (proxies/CDNs can strip them), so identifiers go
+// in the query string instead — e.g. apiDel("events", { id }) → DELETE /api/events?id=…
+export const apiDel = (path, params) => {
+  const qs = params ? "?" + new URLSearchParams(params).toString() : "";
+  return apiSend("DELETE", path + qs);
+};
 export const apiGet = (path) => fetch(`/api/${path}`, { cache: "no-store" }).then(r => r.json());
