@@ -61,5 +61,8 @@
 - **אבטחה** — כל `/api/*` (חוץ מ-`/api/auth`) מאומת ב-middleware. כל קלט עובר `lib/validate.js` (whitelist + טיפוסים; שדות URL חייבים `http(s)://`). אל תעביר גוף-בקשה גולמי ל-DB.
 - **פרומפט Gemini** (`lib/prompts.js`) — קונטקסט מותגים סטטי (בלי תאריכים) + הזרקת נתוני האירוע. עיצוב ווטסאפ עם כוכביות גלויות (`\*…\*`). `cleanMessage` **לא מחובר** ל-route בכוונה — אל תחבר אותו בלי לוודא שלא חותך כוכביות/backslash.
 
+## ידע על באגים פתוחים
+- **`messages` — supabase-js מחזיר 0 שורות על SELECT** (בלי שגיאה), בעוד שאר הטבלאות תקינות ו-INSERT לאותה טבלה עובד. **הקלה נוכחית:** `app/api/data/route.js` קורא הודעות דרך PostgREST REST ישיר (`directMessages()`) עם fallback. שורש לא ידוע (חשד: schema-cache/view/הרשאות-עמודה). **אם חוזר על טבלה אחרת:** החל את אותו דפוס — קריאה ישירה ל-`/rest/v1/<table>` עם `apikey`+`Bearer` של ה-service key.
+
 ## משתני סביבה (Vercel)
 `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `GEMINI_API_KEY`, `APP_PASSWORD` (חובה — סיסמת הכניסה), `AUTH_SECRET` (מומלץ).
