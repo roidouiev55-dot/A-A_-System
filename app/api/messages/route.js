@@ -63,7 +63,13 @@ async function callGemini(prompt) {
 }
 
 export async function POST(req) {
-  const { action, ...body } = await req.json();
+  let parsed;
+  try {
+    parsed = await req.json();
+  } catch {
+    return NextResponse.json({ error: "גוף הבקשה אינו JSON תקין" }, { status: 400 });
+  }
+  const { action, ...body } = parsed || {};
 
   if (action === "generate") {
     let event, msgType;
