@@ -28,7 +28,11 @@ export async function PUT(req) {
 
 export async function DELETE(req) {
   try {
-    const { id } = validate.communityUpdate(await req.json());
+    // id comes via query string (?id=) to match apiDel — DELETE bodies are
+    // unreliable. Fall back to the JSON body for backwards compatibility.
+    let raw = new URL(req.url).searchParams.get("id");
+    if (!raw) { const b = await req.json().catch(() => ({})); raw = b?.id; }
+    const id = validate.id(raw);
     const { error } = await getSupabase().from("communities").delete().eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ ok: true });
