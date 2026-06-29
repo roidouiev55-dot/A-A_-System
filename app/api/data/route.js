@@ -2,51 +2,67 @@ export const dynamic = "force-dynamic";
 import { getSupabase } from "../../../lib/supabase";
 import { NextResponse } from "next/server";
 
-// Page through a table so a low PostgREST "max-rows" / range cap can't silently
-// truncate the result. We advance by the number of rows actually returned and
-// stop only when a page comes back empty — so even a cap of 2 yields every row.
-async function selectAll(sb, table, order) {
-  const PAGE = 1000;
-  let all = [];
-  let from = 0;
-  for (let i = 0; i < 100; i++) { // safety bound: 100 pages
-    let q = sb.from(table).select("*");
-    if (order) q = q.order(order.column, { ascending: order.ascending });
-    const { data, error } = await q.range(from, from + PAGE - 1);
-    if (error) return { data: all, error };
-    all = all.concat(data || []);
-    if (!data || data.length === 0) break;
-    from += data.length;
+// Direct PostgREST read for messages, bypassing the supabase-js client. The
+// client has been returning 0 rows for `messages` (with no error) while every
+// other table loads fine — so we read messages over raw REST and fall back to
+// it when the client comes back empty. Same service_role auth headers.
+async function directMessages() {
+  const url = process.env.SUPABASE_URL || "";
+  const key = process.env.SUPABASE_SERVICE_KEY || "";
+  try {
+    const r = await fetch(`${url}/rest/v1/messages?select=*`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      cache: "no-store",
+    });
+    const body = await r.json().catch(() => null);
+    const rows = Array.isArray(body) ? body : [];
+    rows.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    return { status: r.status, rows, raw: body };
+  } catch (e) {
+    return { status: 0, rows: [], raw: String(e?.message || e) };
   }
-  return { data: all, error: null };
 }
 
 export async function GET() {
   try {
     const sb = getSupabase();
-    const [ev, comm, msg, cs, ba, rs, td] = await Promise.all([
+    const [ev, comm, msg, cs, ba, rs, td, direct] = await Promise.all([
       sb.from("events").select("*").order("date"),
       sb.from("communities").select("*").order("brand"),
-      selectAll(sb, "messages", { column: "created_at", ascending: false }),
+      sb.from("messages").select("*").order("created_at", { ascending: false }),
       sb.from("content_status").select("*"),
       sb.from("brand_assets").select("*"),
       sb.from("reminders_sent").select("*"),
       sb.from("tasks_done").select("*"),
+      directMessages(),
     ]);
+
+    const jsMessages = msg.data || [];
+    // prefer the client result; fall back to the direct REST read when empty
+    const messages = jsMessages.length ? jsMessages : direct.rows;
+
+    // ── TEMP DIAGNOSTICS (remove once confirmed working) ──
+    console.log("[data] SUPABASE_URL:", (process.env.SUPABASE_URL || "MISSING").slice(0, 30));
+    console.log("[data] supabase-js messages:", jsMessages.length, "error:", msg.error?.message || null);
+    console.log("[direct] status:", direct.status, "count:", direct.rows.length);
+    console.log("[direct] body:", JSON.stringify(direct.raw).slice(0, 400));
+
     return NextResponse.json({
       events: ev.data || [],
       communities: comm.data || [],
-      messages: msg.data || [],
+      messages,
       contentStatus: Object.fromEntries((cs.data || []).map(r => [r.id, r])),
       brandAssets: Object.fromEntries((ba.data || []).map(r => [r.brand, r])),
       remindersSent: Object.fromEntries((rs.data || []).map(r => [r.id, r])),
       tasksDone: Object.fromEntries((td.data || []).map(r => [r.id, r])),
-      // TEMP: lets us confirm in the browser whether all messages now load
-      // (paginated) vs the previous 2. Remove once the 7->2 issue is confirmed.
       _debug: {
-        messagesReturned: (msg.data || []).length,
-        eventsReturned: (ev.data || []).length,
+        supabaseJsMessages: jsMessages.length,
+        directStatus: direct.status,
+        directMessages: direct.rows.length,
+        urlPrefix: (process.env.SUPABASE_URL || "MISSING").slice(0, 30),
+        source: jsMessages.length ? "supabase-js" : "direct-rest",
         messagesError: msg.error?.message || null,
+        eventsReturned: (ev.data || []).length,
       },
     });
   } catch (e) {
