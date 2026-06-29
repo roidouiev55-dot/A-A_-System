@@ -64,5 +64,8 @@
 ## ידע על באגים פתוחים
 - **`messages` — supabase-js מחזיר 0 שורות על SELECT** (בלי שגיאה), בעוד שאר הטבלאות תקינות ו-INSERT לאותה טבלה עובד. **הקלה נוכחית:** `app/api/data/route.js` קורא הודעות דרך PostgREST REST ישיר (`directMessages()`) עם fallback. שורש לא ידוע (חשד: schema-cache/view/הרשאות-עמודה). **אם חוזר על טבלה אחרת:** החל את אותו דפוס — קריאה ישירה ל-`/rest/v1/<table>` עם `apikey`+`Bearer` של ה-service key.
 
+## תיקונים שנדחו
+- **M2** — `npm install` לא זמין בסביבת Claude Code (תלוי ב-Node מותקן). יש להריץ ידנית במחשב המקומי של Roi כשנוח: `npm install` בשורש הפרויקט, ואז commit + push של `package-lock.json`.
+
 ## משתני סביבה (Vercel)
 `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `GEMINI_API_KEY`, `APP_PASSWORD` (חובה — סיסמת הכניסה), `AUTH_SECRET` (מומלץ).
