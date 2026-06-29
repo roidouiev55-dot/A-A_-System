@@ -1,0 +1,24 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+
+# vercel
+.vercel/
+
+# env files (never commit — contain SUPABASE_SERVICE_KEY / GEMINI_API_KEY)
+.env
+.env.local
+.env*.local
+
+# claude local settings
+.claude/settings.local.json
+
+# logs
+*.log
+npm-debug.log*
+
+# os
+.DS_Store
