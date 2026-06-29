@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     const sb = getSupabase();
+    console.log("[data] SERVICE_KEY prefix:", (process.env.SUPABASE_SERVICE_KEY || "MISSING").slice(0, 12));
     const [ev, comm, msg, cs, ba, rs, td] = await Promise.all([
       sb.from("events").select("*").order("date"),
       sb.from("communities").select("*").order("brand"),
@@ -14,6 +15,7 @@ export async function GET() {
       sb.from("reminders_sent").select("*"),
       sb.from("tasks_done").select("*"),
     ]);
+    console.log("[data] messages count:", msg.data?.length, "error:", msg.error);
     return NextResponse.json({
       events: ev.data || [],
       communities: comm.data || [],
