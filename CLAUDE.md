@@ -45,6 +45,13 @@
 8. Diagnostic logs זמניים — להסיר בסיום המשימה.
 9. אם אחרי 2 ניסיונות תיקון משהו עדיין לא עובד — עצור ודווח, אל תנסה עוד.
 
+## עקרון "חוקר חופשי, מתקן זהיר"
+בעבודה אוטונומית, שתי קטגוריות פעולות:
+- **חקירה (read-only) — בצע אוטומטית, בלי לעצור לאישור:** כל פקודה שקוראת מ-disk/mount/remote (`cat`, `type`, `Get-Content`, `Test-Path`, `Get-Command`, `where`, `which`, `ls`, `dir`, `git status/log/diff/show`, `npm list`, `vercel logs/ls/inspect/whoami/--version`), כל קריאת API שאינה כותבת (GET, `curl` ל-public endpoints), ובדיקות סביבה (האם CLI/קובץ/תיקייה קיימים). אם הפעולה ברורות read-only ובטוחה אבל אין לה הרשאה ספציפית ב-settings — הרץ אותה בכל זאת, ודווח בסוף שצריך להוסיף אותה.
+- **שינוי (write) — לפי הכללים:** Edit/Write ו-git commit/push מותרים אוטומטית; שינויי DB/env vars/מחיקת קבצים דורשים אישור מפורש (כללי בטיחות #1, #3, #4).
+
+המטרה: ריצה רציפה בלי עצירות מיותרות. עצירה לאישור מותרת רק לפעולות כתיבה משמעותיות או לפי כללי הבטיחות.
+
 ## כללי קוד
 - **עדכונים אופטימיים עם rollback** — כל מוטציה ב-`AppShell` עוברת דרך `mutate(optimisticFn, apiCall)`: מצלם snapshot, מחיל מיד ב-UI, ומשחזר + מציג toast אם ה-API נכשל. אל תחזור לדפוס "patch ואז await בלי טיפול בשגיאה". זרימת "קרא-ואז-החל" (כמו יצירת אירוע) — try/catch עם `notify`.
 - **api helpers זורקים בכישלון** — `apiPost/apiPut/apiDel` (דרך `apiSend`) זורקים על `!res.ok` או `{error}`. תמיד עטוף ב-mutate/try-catch.
