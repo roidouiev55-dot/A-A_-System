@@ -31,7 +31,19 @@
 - **P3 — תחזוקה** (לא דחוף): ריכוז צבעים + קוד מת *(הושלם)*; פיצול `AppShell` ובדיקות *(פתוח)*.
 
 ## הרשאות שכבר אושרו
-ב-`.claude/settings.local.json`: `Bash(git *)`, `Bash(npm *)`, `Bash(npm run *)`, `Bash(python *)`, `Bash(cd *)`, `Bash(ls *)`, `PowerShell(git *)`, `PowerShell(git push *)`, `Edit`, `Write`. אין צורך לבקש אישור לפעולות אלו.
+ב-`.claude/settings.local.json` (Bash + PowerShell). **מותר אוטומטית** בלי לבקש אישור: `git add/commit/status/diff/log`, `git push origin main`, `npm install/run`, `python`, `cd`, `ls`, `vercel logs/ls/inspect`, `Edit`, `Write`.
+**חסום במפורש (deny)** — לעולם לא להריץ: `git push --force`/`-f`, `git reset --hard`, `git clean`, `git rebase`, `git checkout -- `, `git branch -D`, `rm -rf`, `Remove-Item -Recurse`, `vercel rm`/`remove`.
+
+## כללי בטיחות בעבודה אוטונומית
+1. לעולם לא למחוק קבצים בלי אישור מפורש מהמשתמש.
+2. לעולם לא `git push --force` או `git reset --hard` על `main`. ל-rollback — `git revert` בלבד.
+3. לעולם לא לשנות env vars ב-Vercel.
+4. לעולם לא להריץ `DROP TABLE` / `DROP COLUMN` / `TRUNCATE` ב-Supabase בלי אישור.
+5. כל commit חייב הודעה ברורה שמסבירה מה ולמה.
+6. אם משימה דורשת יותר מ-3 commits רצופים בלי בדיקת תוצאה — עצור ודווח.
+7. אחרי refactor שעוקף לוגיקה קיימת, סיים עם "Refactored: <מה ואיפה>".
+8. Diagnostic logs זמניים — להסיר בסיום המשימה.
+9. אם אחרי 2 ניסיונות תיקון משהו עדיין לא עובד — עצור ודווח, אל תנסה עוד.
 
 ## כללי קוד
 - **עדכונים אופטימיים עם rollback** — כל מוטציה ב-`AppShell` עוברת דרך `mutate(optimisticFn, apiCall)`: מצלם snapshot, מחיל מיד ב-UI, ומשחזר + מציג toast אם ה-API נכשל. אל תחזור לדפוס "patch ואז await בלי טיפול בשגיאה". זרימת "קרא-ואז-החל" (כמו יצירת אירוע) — try/catch עם `notify`.
