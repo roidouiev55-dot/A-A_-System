@@ -19,6 +19,9 @@ export async function GET(req) {
 export async function POST(req) {
   const { password } = await req.json().catch(() => ({}));
   if (!(await checkPassword(password))) {
+    // slow down automated password guessing (partial — proper rate limiting
+    // would need an external store across serverless instances)
+    await new Promise(r => setTimeout(r, 600));
     return NextResponse.json({ error: "סיסמה שגויה" }, { status: 401 });
   }
   const res = NextResponse.json({ ok: true });
