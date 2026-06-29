@@ -4,8 +4,9 @@ import { NextResponse } from "next/server";
 
 // Direct PostgREST read for messages: the supabase-js client returns 0 rows for
 // this table (with no error) while every other table loads fine and inserts
-// succeed. We read messages over raw REST with the same service_role auth and
-// fall back to it when the client result is empty.
+// succeed. We read messages exclusively over raw REST with the same service_role
+// auth — the supabase-js messages query was dropped since it always came back
+// empty (it was a redundant second fetch every load). See CLAUDE.md "ידע על באגים פתוחים".
 async function directMessages() {
   const url = process.env.SUPABASE_URL || "";
   const key = process.env.SUPABASE_SERVICE_KEY || "";
@@ -26,10 +27,9 @@ async function directMessages() {
 export async function GET() {
   try {
     const sb = getSupabase();
-    const [ev, comm, msg, cs, ba, rs, td, directMsgs] = await Promise.all([
+    const [ev, comm, cs, ba, rs, td, messages] = await Promise.all([
       sb.from("events").select("*").order("date"),
       sb.from("communities").select("*").order("brand"),
-      sb.from("messages").select("*").order("created_at", { ascending: false }),
       sb.from("content_status").select("*"),
       sb.from("brand_assets").select("*"),
       sb.from("reminders_sent").select("*"),
@@ -37,11 +37,10 @@ export async function GET() {
       directMessages(),
     ]);
 
-    const jsMessages = msg.data || [];
     return NextResponse.json({
       events: ev.data || [],
       communities: comm.data || [],
-      messages: jsMessages.length ? jsMessages : directMsgs,
+      messages,
       contentStatus: Object.fromEntries((cs.data || []).map(r => [r.id, r])),
       brandAssets: Object.fromEntries((ba.data || []).map(r => [r.brand, r])),
       remindersSent: Object.fromEntries((rs.data || []).map(r => [r.id, r])),
