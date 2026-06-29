@@ -103,11 +103,17 @@ export async function POST(req) {
   }
 
   if (action === "delete") {
+    // id arrives in the POST body (apiPost), which is reliable — unlike DELETE
+    // bodies — so transport matches what the handler reads. We add .select() to
+    // confirm a row was actually removed instead of returning a false "ok".
     const id = String(body.id || "").slice(0, 200);
     if (!id) return NextResponse.json({ error: "מזהה (id) חסר" }, { status: 422 });
-    const { error } = await getSupabase().from("messages").delete().eq("id", id);
+    const { data, error } = await getSupabase().from("messages").delete().eq("id", id).select();
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ ok: true });
+    if (!data || data.length === 0) {
+      return NextResponse.json({ error: "ההודעה לא נמחקה — לא נמצאה שורה תואמת (id לא תקין או חוסר הרשאת כתיבה)" }, { status: 404 });
+    }
+    return NextResponse.json({ ok: true, deleted: data.length });
   }
 
   return NextResponse.json({ error: "unknown action" }, { status: 400 });
