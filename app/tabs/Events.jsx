@@ -1,31 +1,52 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BRANDS, BLIST, fmtDateHeb, dowHeb, dateInputToISO, toDateInput, HEB_MONTHS } from "../../lib/core";
 import { apiPost, apiPut, apiDel } from "../api-client";
 import LockGuard from "../LockGuard";
 import s from "../app.module.css";
 
-// Hebrew day/month/year picker — no American format confusion
+// Hebrew day/month/year picker — no American format confusion.
+// Holds its own day/month/year state so a partial selection (e.g. day chosen
+// but month/year not yet) is retained in the UI instead of being wiped. It only
+// emits a value once all three are set, and resyncs from `value` solely on a
+// genuine external change (edit/reset) — not on its own emitted "" for a partial.
 function HebDatePicker({ value, onChange }) {
   const parts = (value || "").split("-"); // yyyy-mm-dd
-  const y = parts[0] || "", m = parts[1] || "", d = parts[2] || "";
+  const vy = parts[0] || "", vm = parts[1] ? String(Number(parts[1])) : "", vd = parts[2] ? String(Number(parts[2])) : "";
+  const [d, setD] = useState(vd);
+  const [m, setM] = useState(vm);
+  const [y, setY] = useState(vy);
+  const lastEmitted = useRef(value || "");
   const now = new Date().getFullYear();
   const years = [now, now+1, now+2];
-  function set(nd, nm, ny) {
-    if (nd && nm && ny) onChange(`${ny}-${String(nm).padStart(2,"0")}-${String(nd).padStart(2,"0")}`);
-    else onChange("");
+
+  // Resync from the prop only when it changed from outside (not our own emit).
+  useEffect(() => {
+    if ((value || "") === lastEmitted.current) return;
+    setD(vd); setM(vm); setY(vy);
+    lastEmitted.current = value || "";
+  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function emit(nd, nm, ny) {
+    const out = (nd && nm && ny) ? `${ny}-${String(nm).padStart(2,"0")}-${String(nd).padStart(2,"0")}` : "";
+    lastEmitted.current = out;
+    onChange(out);
   }
+  function pickD(v){ setD(v); emit(v, m, y); }
+  function pickM(v){ setM(v); emit(d, v, y); }
+  function pickY(v){ setY(v); emit(d, m, v); }
+
   return (
     <div className={s.dateRow}>
-      <select value={d?String(Number(d)):""} onChange={e=>set(e.target.value, m?String(Number(m)):"", y)}>
+      <select value={d} onChange={e=>pickD(e.target.value)}>
         <option value="">יום</option>
         {Array.from({length:31},(_, i)=>i+1).map(n=><option key={n} value={n}>{n}</option>)}
       </select>
-      <select value={m?String(Number(m)):""} onChange={e=>set(d?String(Number(d)):"", e.target.value, y)}>
+      <select value={m} onChange={e=>pickM(e.target.value)}>
         <option value="">חודש</option>
         {HEB_MONTHS.map((mn,i)=><option key={i} value={i+1}>{mn}</option>)}
       </select>
-      <select value={y} onChange={e=>set(d?String(Number(d)):"", m?String(Number(m)):"", e.target.value)}>
+      <select value={y} onChange={e=>pickY(e.target.value)}>
         <option value="">שנה</option>
         {years.map(yr=><option key={yr} value={yr}>{yr}</option>)}
       </select>
