@@ -82,7 +82,7 @@ export default function Messages({ data, patch, mutate, today }) {
           <pre className={s.msgBody}>{m.body}</pre>
           <div className={s.msgActions}>
             <button className={s.btnP} onClick={()=>copyMsg(m.body)}>📋 העתק</button>
-            <button className={s.btnWa} onClick={()=>sendComm(m.body)} title={brandComm?"מעתיק ופותח את הקהילה":"מעתיק ופותח ווטסאפ — הוסף קישור קהילה בטאב הפקות לפתיחה ישירה"}>💬 שלח לווטסאפ</button>
+            <button className={s.btnWa} onClick={()=>sendComm(m.body)} title={brandComm?"מעתיק ופותח את הקהילה":"מעתיק את ההודעה ופותח ווטסאפ"}>💬 שלח לווטסאפ</button>
             {m.status!=="נשלח" && <button className={s.btnG} onClick={()=>markSent(m.id)}>✓ סמן כנשלח</button>}
           </div>
         </div>
