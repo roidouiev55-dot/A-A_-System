@@ -3,10 +3,11 @@ import { useState, useMemo } from "react";
 import { BRANDS, BLIST, fmtDateHeb, dowHeb, diffDays, toDateInput } from "../../lib/core";
 import { buildAllDays } from "../../lib/socialplan";
 import { relDay, CH_ICON } from "../shared";
+import LockGuard from "../LockGuard";
 import s from "../app.module.css";
 
 // ════ SOCIAL PLAN ════
-export default function SocialPlan({ data, today }) {
+export default function SocialPlan({ data, today, unlocked, setUnlocked }) {
   const allDays = useMemo(() => buildAllDays(data.events), [data.events]);
   const [brandFilter, setBrandFilter] = useState("all");
   const [planStart, setPlanStart] = useState(null); // null = full plan
@@ -25,6 +26,7 @@ export default function SocialPlan({ data, today }) {
   let curWeek = null;
   return (
     <div>
+      <LockGuard onChange={setUnlocked}/>
       <div className={s.planControls}>
         <div className={s.planControlText}>
           <span className={s.planControlTitle}>תוכנית התוכן הפעילה</span>
@@ -32,7 +34,7 @@ export default function SocialPlan({ data, today }) {
         </div>
         <div className={s.planControlBtns}>
           <button className={`${s.fbtn} ${!planStart?s.fbtnOn:""}`} onClick={()=>setPlanStart(null)}>מהיום</button>
-          <button className={s.btnP} onClick={()=>setPlanStart(toDateInput(new Date()))}>🔄 תוכנית חדשה מהיום</button>
+          <button className={s.btnP} disabled={!unlocked} onClick={()=>setPlanStart(toDateInput(new Date()))}>🔄 תוכנית חדשה מהיום</button>
         </div>
       </div>
 

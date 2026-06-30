@@ -93,7 +93,7 @@ export default function AppShell() {
       <main className={s.main}>
         {tab==="dashboard" && <Dashboard data={data} reminders={reminders} today={today} setTab={setTab} mutate={mutate}/>}
         {tab==="events" && <Events data={data} patch={patch} mutate={mutate} notify={notify} today={today} unlocked={unlocked} setUnlocked={setUnlocked}/>}
-        {tab==="social" && <SocialPlan data={data} today={today}/>}
+        {tab==="social" && <SocialPlan data={data} today={today} unlocked={unlocked} setUnlocked={setUnlocked}/>}
         {tab==="messages" && <Messages data={data} patch={patch} mutate={mutate} notify={notify} today={today}/>}
         {tab==="library" && <Library data={data} mutate={mutate}/>}
         {tab==="reminders" && <Reminders data={data} reminders={reminders} today={today} mutate={mutate}/>}
