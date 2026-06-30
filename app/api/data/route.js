@@ -27,13 +27,14 @@ async function directMessages() {
 export async function GET() {
   try {
     const sb = getSupabase();
-    const [ev, comm, cs, ba, rs, td, messages] = await Promise.all([
+    const [ev, comm, cs, ba, rs, td, gf, messages] = await Promise.all([
       sb.from("events").select("*").order("date"),
       sb.from("communities").select("*").order("brand"),
       sb.from("content_status").select("*"),
       sb.from("brand_assets").select("*"),
       sb.from("reminders_sent").select("*"),
       sb.from("tasks_done").select("*"),
+      sb.from("general_folders").select("*"),
       directMessages(),
     ]);
 
@@ -43,6 +44,7 @@ export async function GET() {
       messages,
       contentStatus: Object.fromEntries((cs.data || []).map(r => [r.id, r])),
       brandAssets: Object.fromEntries((ba.data || []).map(r => [r.brand, r])),
+      generalFolders: (gf.data && gf.data[0]) || {},
       remindersSent: Object.fromEntries((rs.data || []).map(r => [r.id, r])),
       tasksDone: Object.fromEntries((td.data || []).map(r => [r.id, r])),
     });
