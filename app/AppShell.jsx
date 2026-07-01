@@ -8,6 +8,7 @@ import SocialPlan from "./tabs/SocialPlan";
 import Messages from "./tabs/Messages";
 import Reminders from "./tabs/Reminders";
 import BrandsTab from "./tabs/BrandsTab";
+import ContentTrainer from "./tabs/ContentTrainer";
 import Library from "./tabs/Library";
 import s from "./app.module.css";
 
@@ -73,6 +74,7 @@ export default function AppShell() {
     { id:"library", label:"📚 מאגר" },
     { id:"reminders", label:"📨 תזכורות" },
     { id:"brands", label:"🎨 הפקות" },
+    { id:"trainer", label:"🎯 מאמן התוכן" },
   ];
 
   return (
@@ -98,6 +100,7 @@ export default function AppShell() {
         {tab==="library" && <Library data={data} mutate={mutate}/>}
         {tab==="reminders" && <Reminders data={data} reminders={reminders} today={today} mutate={mutate}/>}
         {tab==="brands" && <BrandsTab data={data} mutate={mutate} today={today} unlocked={unlocked} setUnlocked={setUnlocked}/>}
+        {tab==="trainer" && <ContentTrainer data={data}/>}
       </main>
       <footer className={s.footer}>A&A HAFAKOT · מערכת ניהול 2026</footer>
       {toast && <div className={s.toast} role="alert">{toast.msg}</div>}
