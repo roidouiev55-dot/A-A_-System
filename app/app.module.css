@@ -274,3 +274,119 @@
 .libEvent{font-size:12px;color:var(--ink-soft)}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:1000;max-width:min(420px,90vw);background:#3a1d22;color:#f5d2d8;border:1px solid #7a2f3a;border-radius:12px;padding:13px 20px;font-size:14px;font-weight:500;line-height:1.5;text-align:center;box-shadow:0 10px 32px rgba(0,0,0,.45);animation:toastIn .2s ease-out}
 @keyframes toastIn{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+
+/* ═══════════ DASHBOARD WIDGET BOARD ═══════════ */
+.wgrid{
+  display:grid;gap:16px;grid-template-columns:repeat(12,1fr);
+  grid-template-areas:
+    "hero hero hero hero hero hero hero hero hero hero hero hero"
+    "tasks tasks tasks tasks social social social social month month month month"
+    "week week week week week week week note note note note note"
+    "alerts alerts alerts alerts alerts alerts alerts alerts alerts alerts alerts alerts";
+}
+.wgridNoAlerts{
+  grid-template-areas:
+    "hero hero hero hero hero hero hero hero hero hero hero hero"
+    "tasks tasks tasks tasks social social social social month month month month"
+    "week week week week week week week note note note note note";
+}
+.wHero{grid-area:hero}
+.wTasks{grid-area:tasks}
+.wSocial{grid-area:social}
+.wMonth{grid-area:month}
+.wWeek{grid-area:week}
+.wNote{grid-area:note}
+.wAlerts{grid-area:alerts}
+
+.widget{
+  background:var(--glass);border:1px solid var(--line);border-radius:18px;padding:20px;
+  backdrop-filter:blur(8px);box-shadow:0 8px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.04);
+  transition:transform .18s,box-shadow .18s,border-color .18s;
+  display:flex;flex-direction:column;min-width:0;
+}
+.widget:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(0,0,0,.35);border-color:var(--line-2)}
+.wLabel{font-family:"Frank Ruhl Libre",serif;font-size:14px;font-weight:700;color:var(--gold);letter-spacing:.03em;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.wEmpty{color:var(--ink-soft);font-size:14px;text-align:center;padding:24px 12px;background:rgba(0,0,0,.15);border-radius:12px;border:1px dashed var(--line-2);flex:1;display:flex;align-items:center;justify-content:center;line-height:1.6}
+
+/* ── hero widget ── */
+.wHero{position:relative;overflow:hidden;padding:26px}
+.wHero::before{content:"";position:absolute;top:-55%;right:-5%;width:50%;height:130%;border-radius:50%;background:var(--accent,#E3B45A);filter:blur(70px);opacity:.2;pointer-events:none}
+.heroTop{display:flex;align-items:center;gap:12px;position:relative;margin-bottom:8px}
+.wHero .wLabel{margin-bottom:0}
+.heroSnippet{font-size:13.5px;color:var(--ink-soft);margin-top:12px;line-height:1.6;position:relative;max-width:640px}
+
+/* ── tasks widget ── */
+.taskList{display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.taskRow{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:11px;padding:10px 13px;max-height:90px;overflow:hidden;transition:opacity .22s,transform .22s,max-height .24s,padding .24s,margin .24s,border-width .24s,background .15s}
+.taskRow:hover{background:rgba(0,0,0,.3)}
+.taskUrgent{background:rgba(194,74,94,.14);border-color:rgba(194,74,94,.4)}
+.taskLeaving{opacity:0;transform:translateX(-24px);max-height:0;padding-top:0;padding-bottom:0;margin-bottom:-8px;border-width:0}
+.taskCheck{width:22px;height:22px;border-radius:6px;border:2px solid var(--line-2);background:rgba(255,255,255,.04);flex-shrink:0;transition:all .15s}
+.taskCheck:hover{border-color:var(--gold);background:rgba(227,180,90,.2)}
+.taskIcon{font-size:16px;flex-shrink:0}
+.taskText{font-size:13px;color:var(--ink);flex:1;line-height:1.4;min-width:0}
+
+/* ── social widget ── */
+.socialList{display:flex;flex-direction:column;gap:15px;justify-content:center;flex:1}
+.socialRow{display:block;width:100%;text-align:right;background:transparent}
+.socialTop{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.socialLabel{font-size:13px;font-weight:600;color:var(--ink);transition:color .15s}
+.socialCount{font-size:12.5px;font-weight:700;color:var(--gold-soft)}
+.socialTrack{height:9px;border-radius:100px;background:rgba(0,0,0,.32);overflow:hidden;border:1px solid var(--line)}
+.socialFill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--gold-soft),var(--gold));transition:width .45s ease}
+.socialFull{background:linear-gradient(90deg,#8FCB6A,#5FA83E)}
+.socialRow:hover .socialLabel{color:var(--gold-soft)}
+
+/* ── week widget ── */
+.weekStrip{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.weekDay{display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 4px;border-radius:11px;background:rgba(0,0,0,.18);border:1px solid var(--line);transition:all .15s}
+.weekDay:hover{background:rgba(255,255,255,.06);border-color:var(--line-2)}
+.weekToday{border-color:var(--gold);background:rgba(227,180,90,.12)}
+.weekSel{box-shadow:0 0 0 2px rgba(227,180,90,.35)}
+.weekDow{font-size:11px;color:var(--ink-soft);font-weight:600}
+.weekNum{font-size:17px;font-weight:800;color:var(--ink);font-family:"Frank Ruhl Libre",serif;line-height:1}
+.weekDots{display:flex;gap:3px;height:7px;align-items:center}
+.weekDot{width:6px;height:6px;border-radius:50%}
+.weekDetail{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.weekDetailEmpty{font-size:13px;color:var(--ink-soft);text-align:center;padding:6px}
+.weekDetailRow{display:flex;align-items:center;gap:9px}
+.weekDetailText{font-size:13px;color:var(--ink)}
+.weekDetailLink{align-self:flex-start;font-size:12.5px;font-weight:700;color:var(--gold-soft);background:transparent;padding:4px 0}
+
+/* ── alerts widget ── */
+.wAlerts{border-color:rgba(194,74,94,.35)}
+.alertList{display:flex;flex-direction:column;gap:9px}
+.alertRow{display:flex;align-items:center;gap:11px;border-radius:11px;padding:11px 14px}
+.alertUrgent{background:rgba(194,74,94,.14);border:1px solid rgba(194,74,94,.4)}
+.alertWarn{background:rgba(227,180,90,.12);border:1px solid rgba(227,180,90,.35)}
+.alertIcon{font-size:14px;flex-shrink:0}
+.alertText{font-size:13.5px;color:var(--ink);flex:1;line-height:1.4}
+.alertBtn{font-size:12px;font-weight:700;color:var(--ink);background:var(--glass-2);border:1px solid var(--line-2);padding:6px 14px;border-radius:8px;flex-shrink:0;transition:all .15s}
+.alertBtn:hover{background:var(--glass-3);border-color:var(--gold)}
+
+/* ── note widget ── */
+.noteStatus{margin-right:auto;font-size:11px;font-weight:600;color:var(--ink-soft)}
+.noteSaved{color:#A6DD86}
+.noteErr{color:#F0A6B2}
+.noteArea{flex:1;min-height:150px;padding:12px 14px;border:1px solid var(--line-2);border-radius:11px;font-size:14px;background:rgba(0,0,0,.25);color:var(--ink);resize:vertical;line-height:1.6;font-family:inherit}
+.noteArea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(227,180,90,.15)}
+.noteArea::placeholder{color:var(--ink-mute)}
+
+/* ── month events widget ── */
+.monthList{display:flex;flex-direction:column;gap:7px}
+.monthRow{display:flex;align-items:center;gap:11px;background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:10px;padding:9px 13px;text-align:right;transition:all .15s}
+.monthRow:hover{background:rgba(255,255,255,.06);transform:translateX(-2px)}
+.monthDate{font-size:12.5px;font-weight:700;color:var(--gold-soft);min-width:44px}
+.monthName{font-size:13px;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.monthMore{font-size:12.5px;font-weight:700;color:var(--gold-soft);background:transparent;padding:8px 4px;text-align:center}
+
+/* ── mobile: single column, curated order ── */
+@media(max-width:900px){
+  .wgrid{
+    grid-template-columns:1fr;
+    grid-template-areas:"hero" "tasks" "alerts" "social" "week" "note" "month";
+  }
+  .wgridNoAlerts{
+    grid-template-areas:"hero" "tasks" "social" "week" "note" "month";
+  }
+}
