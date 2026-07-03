@@ -73,7 +73,7 @@ export default function AppShell() {
     { id:"messages", label:"💬 הודעות" },
     { id:"library", label:"📚 מאגר" },
     { id:"reminders", label:"📨 תזכורות" },
-    { id:"brands", label:"🎨 הפקות" },
+    { id:"brands", label:"📁 תיקיות" },
     { id:"trainer", label:"🎯 מאמן התוכן" },
   ];
 
