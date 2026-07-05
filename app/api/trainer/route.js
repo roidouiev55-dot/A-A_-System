@@ -63,6 +63,16 @@ async function callGemini(prompt) {
   throw new Error(lastErr);
 }
 
+// Factual-accuracy guardrails — the Brand Bible sets tone, NOT facts. Keeps the
+// model from inventing atmosphere (sunset/evening/weather) that the event's real
+// hours don't support. Shared verbatim with lib/prompts.js (WhatsApp) on purpose.
+const ACCURACY_RULES = `כללי דיוק (מחייב):
+- הצמד אך ורק לפרטים שמופיעים באירוע: תאריך, שעות, מיקום, וכל מה שכתוב בפרטי האירוע.
+- אל תמציא פרטים שלא נמסרו — במיוחד לא זמן ביום (שקיעה/זריחה/ערב/לילה), מזג אוויר, או אווירה שאינה נגזרת מהשעות בפועל.
+- אם האירוע בשעות היום (למשל 12:00-17:00), אל תתאר שקיעה, ערב או לילה. התאם את התיאור לשעות האמיתיות.
+- ה-Brand Bible מגדיר את הטון והשפה — לא את העובדות. השתמש בו כדי לכתוב יפה, לא כדי להוסיף פרטים שלא קיימים.
+- אם פרט מסוים חסר באירוע — אל תמלא אותו מדמיונך, פשוט אל תזכיר אותו.`;
+
 // Build the story-suggestion prompt from the brand bible + recent feedback so the
 // model learns from what was previously approved/rejected for this production.
 // `ctx` carries the current date and the nearest upcoming event so the model
@@ -92,11 +102,17 @@ function buildTrainerPrompt(brandId, feedbacks, ctx = {}) {
       ).join("\n")
     : "";
 
+  const details = (ctx.event?.full_details || "").trim();
   const timeBlock = [
     ctx.todayStr ? `התאריך היום: ${ctx.todayStr}.` : "",
     ctx.event
       ? `האירוע הקרוב של ${b.name}: "${ctx.event.name}"${ctx.eventDateStr ? ` בתאריך ${ctx.eventDateStr}` : ""}${ctx.event.location ? `, ${ctx.event.location}` : ""}${ctx.daysOut != null ? ` (בעוד ${ctx.daysOut} ימים)` : ""}.`
       : `אין כרגע אירוע קרוב מתוזמן ל${b.name} — התמקד בתוכן קהילה/אווירה כללי, בלי לרמז על אירוע ספציפי.`,
+    ctx.event
+      ? (details
+          ? `פרטי האירוע (מקור אמת יחיד — הצמד אך ורק אליהם, אל תמציא מעבר לכתוב):\n"""\n${details}\n"""`
+          : "פרטי האירוע: לא נמסרו פרטים נוספים מעבר לתאריך והמיקום — אל תמציא שעות, זמן ביום או אווירה.")
+      : "",
     "הנחיית זמן קריטית: הצע תוכן שרלוונטי אך ורק לתאריך הנוכחי, לאירוע הקרוב ולעונה הנוכחית. אל תציע תוכן שקשור לחגים, מועדים או אירועים שכבר עברו.",
   ].filter(Boolean).join("\n");
 
@@ -114,7 +130,9 @@ ${brandBlock}${learn}
 מודעות לזמן (מחייב):
 ${timeBlock}
 
-המשימה: הצע סטורי אחד בלבד — יצירתי, אקטואלי ומדויק להפקה. לא גנרי, המשך שיחה ולא הכרזה. עברית בלבד.
+${ACCURACY_RULES}
+
+המשימה: הצע סטורי אחד בלבד — יצירתי, אקטואלי ומדויק להפקה. לא גנרי, המשך שיחה ולא הכרזה. עברית בלבד. נאמן לעובדות האירוע — יופי הכתיבה בא מהטון, לא מהמצאת פרטים.
 
 החזר בדיוק במבנה הבא, כל שדה בשורה נפרדת, בלי הקדמות ובלי סיכום:
 סוג תוכן: <בחר אחד מהרשימה, בעברית>
@@ -149,7 +167,7 @@ export async function POST(req) {
         .order("created_at", { ascending: false })
         .limit(10),
       sb.from("events")
-        .select("name,date,location")
+        .select("name,date,location,full_details")
         .eq("brand", brand)
         .gte("date", todayStart.toISOString())
         .order("date", { ascending: true })
