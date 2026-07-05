@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30; // room for Gemini timeout + retries
 import { getSupabase } from "../../../lib/supabase";
 import { BRAND_BIBLE, CONTENT_TYPES, GENERAL_PRINCIPLES } from "../../../lib/brandbible";
+import { fmtDateFull, dowHeb, diffDays } from "../../../lib/core";
 import { validate, ValidationError } from "../../../lib/validate";
 import { NextResponse } from "next/server";
 
@@ -64,7 +65,9 @@ async function callGemini(prompt) {
 
 // Build the story-suggestion prompt from the brand bible + recent feedback so the
 // model learns from what was previously approved/rejected for this production.
-function buildTrainerPrompt(brandId, feedbacks) {
+// `ctx` carries the current date and the nearest upcoming event so the model
+// never proposes content tied to a season/holiday/event that has already passed.
+function buildTrainerPrompt(brandId, feedbacks, ctx = {}) {
   const b = BRAND_BIBLE[brandId];
   const principles = GENERAL_PRINCIPLES.map(p => `- ${p}`).join("\n");
   const types = CONTENT_TYPES.map(t => `- ${t.label}: ${t.desc}`).join("\n");
@@ -89,6 +92,14 @@ function buildTrainerPrompt(brandId, feedbacks) {
       ).join("\n")
     : "";
 
+  const timeBlock = [
+    ctx.todayStr ? `התאריך היום: ${ctx.todayStr}.` : "",
+    ctx.event
+      ? `האירוע הקרוב של ${b.name}: "${ctx.event.name}"${ctx.eventDateStr ? ` בתאריך ${ctx.eventDateStr}` : ""}${ctx.event.location ? `, ${ctx.event.location}` : ""}${ctx.daysOut != null ? ` (בעוד ${ctx.daysOut} ימים)` : ""}.`
+      : `אין כרגע אירוע קרוב מתוזמן ל${b.name} — התמקד בתוכן קהילה/אווירה כללי, בלי לרמז על אירוע ספציפי.`,
+    "הנחיית זמן קריטית: הצע תוכן שרלוונטי אך ורק לתאריך הנוכחי, לאירוע הקרוב ולעונה הנוכחית. אל תציע תוכן שקשור לחגים, מועדים או אירועים שכבר עברו.",
+  ].filter(Boolean).join("\n");
+
   return `אתה כותב תוכן סטוריז לאינסטגרם עבור הפקת האירועים "${b.name}" של חברת A&A HAFAKOT. אתה חבר בקהילה שיודע — לא מותג שמכריז.
 
 עקרונות ברזל לכל סטורי:
@@ -99,6 +110,9 @@ ${types}
 
 הידע על ההפקה:
 ${brandBlock}${learn}
+
+מודעות לזמן (מחייב):
+${timeBlock}
 
 המשימה: הצע סטורי אחד בלבד — יצירתי, אקטואלי ומדויק להפקה. לא גנרי, המשך שיחה ולא הכרזה. עברית בלבד.
 
@@ -123,15 +137,34 @@ export async function POST(req) {
     let brand;
     try { brand = validate.trainerBrand(body); } catch (e) { return bad(e); }
 
-    // pull the last 10 feedbacks for this brand so the model learns from them
-    const { data: fb } = await getSupabase()
-      .from("content_feedback")
-      .select("content_type,suggestion,decision,note")
-      .eq("brand", brand)
-      .order("created_at", { ascending: false })
-      .limit(10);
+    // pull the last 10 feedbacks for this brand (learning) + the nearest upcoming
+    // event (time-awareness) so the model never proposes past/holiday content.
+    const sb = getSupabase();
+    const now = new Date();
+    const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
+    const [fbRes, evRes] = await Promise.all([
+      sb.from("content_feedback")
+        .select("content_type,suggestion,decision,note")
+        .eq("brand", brand)
+        .order("created_at", { ascending: false })
+        .limit(10),
+      sb.from("events")
+        .select("name,date,location")
+        .eq("brand", brand)
+        .gte("date", todayStart.toISOString())
+        .order("date", { ascending: true })
+        .limit(1),
+    ]);
+    const fb = fbRes.data;
+    const nextEv = evRes.data && evRes.data[0];
+    const ctx = {
+      todayStr: `${fmtDateFull(now)}, יום ${dowHeb(now)}`,
+      event: nextEv || null,
+      eventDateStr: nextEv ? `${fmtDateFull(nextEv.date)}, יום ${dowHeb(nextEv.date)}` : "",
+      daysOut: nextEv ? diffDays(todayStart, new Date(nextEv.date)) : null,
+    };
 
-    const prompt = buildTrainerPrompt(brand, fb || []);
+    const prompt = buildTrainerPrompt(brand, fb || [], ctx);
     try {
       const text = await callGemini(prompt);
       const m = text.match(/סוג תוכן:\s*(.+)/);
