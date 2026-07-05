@@ -70,13 +70,15 @@ function buildTrainerPrompt(brandId, feedbacks) {
   const types = CONTENT_TYPES.map(t => `- ${t.label}: ${t.desc}`).join("\n");
   const brandBlock = [
     `שם: ${b.name}`,
-    `פרופיל: ${b.profile}`,
-    b.event ? `מועד/מועדים: ${b.event}` : "",
-    b.area ? `אזור: ${b.area}` : "",
-    b.vibe ? `וויב: ${b.vibe}` : "",
-    b.menu ? `תפריט: ${b.menu}` : "",
-    b.codes ? `קודים וקהילה: ${b.codes}` : "",
-    b.avoid?.length ? `מילים/ביטויים אסורים: ${b.avoid.join(", ")}` : "",
+    b.voice ? `קול (Voice): ${b.voice}` : "",
+    b.tone ? `טון (Tone): ${b.tone}` : "",
+    b.vocabulary?.length ? `אוצר מילים וביטויי מפתח: ${b.vocabulary.join(" · ")}` : "",
+    b.signature ? `סלוגן/חתימה: ${b.signature}` : "",
+    b.formula ? `מבנה מנצח למסר: ${b.formula}` : "",
+    b.emojis ? `שימוש באימוג'ים: ${b.emojis}` : "",
+    b.length ? `אורך: ${b.length}` : "",
+    b.winning ? `מה שעובד (winning): ${b.winning}` : "",
+    b.watchout ? `להיזהר מ: ${b.watchout}` : "",
   ].filter(Boolean).join("\n");
 
   const learn = feedbacks.length
