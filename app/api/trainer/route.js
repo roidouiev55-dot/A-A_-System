@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30; // room for Gemini timeout + retries
 import { getSupabase } from "../../../lib/supabase";
 import { BRAND_BIBLE, CONTENT_TYPES, GENERAL_PRINCIPLES } from "../../../lib/brandbible";
-import { fmtDateFull, dowHeb, diffDays } from "../../../lib/core";
+import { fmtDateFullIL, dowHebIL, diffDays } from "../../../lib/core";
 import { validate, ValidationError } from "../../../lib/validate";
 import { NextResponse } from "next/server";
 
@@ -158,9 +158,9 @@ export async function POST(req) {
     const fb = fbRes.data;
     const nextEv = evRes.data && evRes.data[0];
     const ctx = {
-      todayStr: `${fmtDateFull(now)}, יום ${dowHeb(now)}`,
+      todayStr: `${fmtDateFullIL(now)}, יום ${dowHebIL(now)}`,
       event: nextEv || null,
-      eventDateStr: nextEv ? `${fmtDateFull(nextEv.date)}, יום ${dowHeb(nextEv.date)}` : "",
+      eventDateStr: nextEv ? `${fmtDateFullIL(nextEv.date)}, יום ${dowHebIL(nextEv.date)}` : "",
       daysOut: nextEv ? diffDays(todayStart, new Date(nextEv.date)) : null,
     };
 
