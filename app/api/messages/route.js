@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 export const maxDuration = 30; // allow room for Gemini timeout + retries
 import { getSupabase } from "../../../lib/supabase";
-import { buildGeminiPrompt } from "../../../lib/prompts";
+import { buildGeminiPrompt, cleanMessage } from "../../../lib/prompts";
 import { validate, ValidationError } from "../../../lib/validate";
 import { NextResponse } from "next/server";
 
@@ -80,7 +80,7 @@ export async function POST(req) {
 
     const prompt = buildGeminiPrompt(event, msgType);
     try {
-      const text = await callGemini(prompt);
+      const text = cleanMessage(await callGemini(prompt));
 
       // set created_at explicitly: GET /api/data orders messages by it, so a
       // null value would mis-sort or hide a freshly generated message after a refresh.
