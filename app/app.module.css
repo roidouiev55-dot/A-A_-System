@@ -169,6 +169,8 @@
 .planIco{font-size:15px;flex-shrink:0;margin-top:1px}
 .planTaskBody{display:flex;flex-direction:column;gap:1px}
 .planType{font-size:10.5px;font-weight:800;color:var(--gold-soft)}
+.planTypeRow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.planEvTag{font-size:9.5px;font-weight:800;padding:1px 7px;border-radius:100px;white-space:nowrap;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18)}
 .planTitle{font-size:13px;color:var(--ink);line-height:1.4}
 
 /* ── brand cards: lit bottles behind the bar ── */

@@ -22,6 +22,10 @@ function buildPrintDoc(windowDays, brands) {
 
   const brandSections = brands.map(bid => {
     const B = BRANDS[bid];
+    // tag tasks with their event only when this brand has more than one event
+    const evKeys = new Set();
+    dated.forEach(day => (day.tasks[bid] || []).forEach(t => evKeys.add(t.evKey)));
+    const showEv = evKeys.size > 1;
     const rows = [];
     let curWeek = null;
     dated.forEach(day => {
@@ -29,9 +33,11 @@ function buildPrintDoc(windowDays, brands) {
       if (!ts) return;
       if (day.week !== curWeek) { curWeek = day.week; rows.push(`<tr class="wk"><td colspan="2">${esc(day.week)}</td></tr>`); }
       const d = new Date(day.date);
-      const tasksHtml = ts.map(t =>
-        `<div class="task"><span class="ic">${CH_ICON[t.ch] || "•"}</span><span class="ty">${esc(t.type)}</span> ${esc(t.title)}</div>`
-      ).join("");
+      const tasksHtml = ts.map(t => {
+        const evLabel = t.evName || (t.evDate ? fmtDateHeb(new Date(t.evDate)) : "");
+        const evTag = showEv && evLabel ? `<span class="ev">${esc(evLabel)}</span>` : "";
+        return `<div class="task"><span class="ic">${CH_ICON[t.ch] || "•"}</span><span class="ty">${esc(t.type)}</span>${evTag} ${esc(t.title)}</div>`;
+      }).join("");
       rows.push(`<tr><td class="dcell">${esc(fmtDateHeb(d))}<br><span class="dow">יום ${esc(dowHeb(d))}</span></td><td>${tasksHtml}</td></tr>`);
     });
     if (!rows.length) return "";
@@ -60,6 +66,7 @@ function buildPrintDoc(windowDays, brands) {
     .task { padding: 3px 0; }
     .task .ic { margin-left: 6px; }
     .task .ty { font-weight: 800; color: #7a5a1e; font-size: 11.5px; }
+    .task .ev { font-weight: 800; font-size: 10px; color: #444; background: #f0ece0; border: 1px solid #e0d8c4; border-radius: 100px; padding: 1px 7px; margin: 0 4px; white-space: nowrap; }
     footer { margin-top: 30px; text-align: center; font-size: 11px; color: #aaa; }
   </style></head><body>
   <header><h1>תוכנית תוכן</h1><div class="range">${esc(range)}</div></header>
@@ -76,6 +83,16 @@ export default function SocialPlan({ data, today }) {
 
   const windowDays = allDays.filter(d => diffDays(today, new Date(d.date)) >= -1);
   const visibleBrands = PLAN_BRANDS.filter(b => selected.has(b));
+
+  // Brands that have more than one distinct event in the window — only for these
+  // do we tag each task with its owning event, to keep single-event brands clean.
+  const multiEventBrands = useMemo(() => {
+    const perBrand = {};
+    windowDays.forEach(d => PLAN_BRANDS.forEach(b => (d.tasks[b] || []).forEach(t => {
+      (perBrand[b] = perBrand[b] || new Set()).add(t.evKey);
+    })));
+    return new Set(PLAN_BRANDS.filter(b => perBrand[b] && perBrand[b].size > 1));
+  }, [windowDays]);
 
   const totals = { story: 0, post: 0, comm: 0 };
   windowDays.forEach(day => visibleBrands.forEach(bid => (day.tasks[bid] || []).forEach(t => { if (totals[t.ch] != null) totals[t.ch]++; })));
@@ -159,7 +176,11 @@ export default function SocialPlan({ data, today }) {
                       <div key={i} className={`${s.planTask} ${t.flag === "urgent" ? s.planUrgent : t.flag === "key" ? s.planKey : ""}`}>
                         <span className={s.planIco}>{CH_ICON[t.ch]}</span>
                         <div className={s.planTaskBody}>
-                          <span className={s.planType}>{t.type}</span>
+                          <div className={s.planTypeRow}>
+                            <span className={s.planType}>{t.type}</span>
+                            {multiEventBrands.has(bid) && (t.evName || t.evDate) &&
+                              <span className={s.planEvTag} style={{ color: BRANDS[bid].text }}>{t.evName || fmtDateHeb(new Date(t.evDate))}</span>}
+                          </div>
                           <span className={s.planTitle}>{t.title}</span>
                         </div>
                       </div>
