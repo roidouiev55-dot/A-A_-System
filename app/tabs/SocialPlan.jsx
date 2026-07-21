@@ -1,72 +1,151 @@
 "use client";
 import { useState, useMemo } from "react";
-import { BRANDS, BLIST, fmtDateHeb, dowHeb, diffDays, toDateInput } from "../../lib/core";
+import { BRANDS, fmtDateHeb, fmtDateFull, dowHeb, diffDays } from "../../lib/core";
 import { buildAllDays } from "../../lib/socialplan";
-import { relDay, CH_ICON } from "../shared";
-import LockGuard from "../LockGuard";
+import { CH_ICON } from "../shared";
 import s from "../app.module.css";
 
+// Brands shown in the plan (WB is excluded by the engine too).
+const PLAN_BRANDS = ["WN", "MX", "BG"];
+
+function esc(str) {
+  return String(str).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// Build a self-contained, print-optimised HTML document (light, RTL, professional)
+// with no trace of the app itself — suitable for sending to an external partner.
+function buildPrintDoc(windowDays, brands) {
+  const dated = windowDays.filter(d => brands.some(b => d.tasks[b]));
+  const first = dated[0] && new Date(dated[0].date);
+  const last = dated.length && new Date(dated[dated.length - 1].date);
+  const range = first ? `${fmtDateFull(first)} – ${fmtDateFull(last)}` : "";
+
+  const brandSections = brands.map(bid => {
+    const B = BRANDS[bid];
+    const rows = [];
+    let curWeek = null;
+    dated.forEach(day => {
+      const ts = day.tasks[bid];
+      if (!ts) return;
+      if (day.week !== curWeek) { curWeek = day.week; rows.push(`<tr class="wk"><td colspan="2">${esc(day.week)}</td></tr>`); }
+      const d = new Date(day.date);
+      const tasksHtml = ts.map(t =>
+        `<div class="task"><span class="ic">${CH_ICON[t.ch] || "•"}</span><span class="ty">${esc(t.type)}</span> ${esc(t.title)}</div>`
+      ).join("");
+      rows.push(`<tr><td class="dcell">${esc(fmtDateHeb(d))}<br><span class="dow">יום ${esc(dowHeb(d))}</span></td><td>${tasksHtml}</td></tr>`);
+    });
+    if (!rows.length) return "";
+    return `<section class="brand">
+      <h2 style="background:${B.bg};color:${B.text}">${esc(B.name)} · ${esc(B.type)}</h2>
+      <table>${rows.join("")}</table>
+    </section>`;
+  }).join("");
+
+  return `<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8">
+  <title>תוכנית תוכן</title>
+  <style>
+    @page { margin: 18mm 14mm; }
+    * { box-sizing: border-box; }
+    body { font-family: "Segoe UI", "Arial", "Frank Ruhl Libre", sans-serif; color: #1c1c22; background: #fff; margin: 0; padding: 24px; line-height: 1.5; }
+    header { border-bottom: 3px solid #b08b3f; padding-bottom: 14px; margin-bottom: 26px; }
+    header h1 { font-size: 26px; margin: 0 0 4px; font-weight: 800; letter-spacing: .01em; }
+    header .range { font-size: 14px; color: #555; font-weight: 600; }
+    section.brand { margin-bottom: 30px; page-break-inside: avoid; }
+    section.brand h2 { font-size: 18px; font-weight: 800; padding: 9px 16px; border-radius: 8px; margin: 0 0 10px; }
+    table { width: 100%; border-collapse: collapse; }
+    tr.wk td { font-size: 13px; font-weight: 800; color: #b08b3f; padding: 14px 4px 5px; border-bottom: 1px solid #e3e3e3; letter-spacing: .04em; }
+    td { vertical-align: top; padding: 8px 4px; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+    td.dcell { width: 130px; font-weight: 700; white-space: nowrap; color: #33333b; }
+    td.dcell .dow { font-weight: 500; font-size: 11.5px; color: #888; }
+    .task { padding: 3px 0; }
+    .task .ic { margin-left: 6px; }
+    .task .ty { font-weight: 800; color: #7a5a1e; font-size: 11.5px; }
+    footer { margin-top: 30px; text-align: center; font-size: 11px; color: #aaa; }
+  </style></head><body>
+  <header><h1>תוכנית תוכן</h1><div class="range">${esc(range)}</div></header>
+  ${brandSections || '<p style="color:#888">אין משימות בטווח שנבחר.</p>'}
+  <footer>הופק ${esc(fmtDateFull(new Date()))}</footer>
+  </body></html>`;
+}
+
 // ════ SOCIAL PLAN ════
-export default function SocialPlan({ data, today, unlocked, setUnlocked }) {
+export default function SocialPlan({ data, today }) {
   const allDays = useMemo(() => buildAllDays(data.events), [data.events]);
-  const [brandFilter, setBrandFilter] = useState("all");
-  const [planStart, setPlanStart] = useState(null); // null = full plan
-  const [planLen, setPlanLen] = useState(21);
+  // brand selection — drives both the on-screen view and the PDF export
+  const [selected, setSelected] = useState(() => new Set(PLAN_BRANDS));
 
-  const startDate = planStart ? new Date(planStart) : null;
-  const windowDays = allDays.filter(d => {
-    const dd = diffDays(today, new Date(d.date));
-    if (startDate) { const fromStart = diffDays(startDate, new Date(d.date)); return fromStart >= 0 && fromStart <= planLen; }
-    return dd >= -1 && dd <= planLen;
-  });
+  const windowDays = allDays.filter(d => diffDays(today, new Date(d.date)) >= -1);
+  const visibleBrands = PLAN_BRANDS.filter(b => selected.has(b));
 
-  let totals = { story:0, post:0, comm:0 };
-  windowDays.forEach(day => Object.values(day.tasks).forEach(ts => ts.forEach(t => totals[t.ch]++)));
+  const totals = { story: 0, post: 0, comm: 0 };
+  windowDays.forEach(day => visibleBrands.forEach(bid => (day.tasks[bid] || []).forEach(t => { if (totals[t.ch] != null) totals[t.ch]++; })));
+
+  function toggle(bid) {
+    setSelected(prev => {
+      const n = new Set(prev);
+      if (n.has(bid)) { if (n.size > 1) n.delete(bid); } else n.add(bid);
+      return n;
+    });
+  }
+
+  function exportPDF() {
+    const html = buildPrintDoc(windowDays, PLAN_BRANDS.filter(b => selected.has(b)));
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    const go = () => { try { w.print(); } catch {} };
+    if (w.document.readyState === "complete") setTimeout(go, 250); else w.onload = () => setTimeout(go, 250);
+  }
 
   let curWeek = null;
   return (
     <div>
-      <LockGuard onChange={setUnlocked}/>
       <div className={s.planControls}>
         <div className={s.planControlText}>
           <span className={s.planControlTitle}>תוכנית התוכן הפעילה</span>
-          <span className={s.planControlSub}>נגזרת אוטומטית מהאירועים · {planStart?`מתאריך ${fmtDateHeb(planStart)}`:"מהיום והלאה"}</span>
+          <span className={s.planControlSub}>נגזרת אוטומטית מהאירועים · מהיום ועד שבוע וחצי אחרי כל אירוע</span>
         </div>
         <div className={s.planControlBtns}>
-          <button className={`${s.fbtn} ${!planStart?s.fbtnOn:""}`} onClick={()=>setPlanStart(null)}>מהיום</button>
-          <button className={s.btnP} disabled={!unlocked} onClick={()=>setPlanStart(toDateInput(new Date()))}>🔄 תוכנית חדשה מהיום</button>
+          <button className={s.btnP} onClick={exportPDF}>🖨 ייצא ל-PDF</button>
         </div>
       </div>
 
       <div className={s.statRow}>
-        <div className={s.stat}><span className={s.statN}>{totals.story+totals.post+totals.comm}</span><span className={s.statL}>משימות</span></div>
+        <div className={s.stat}><span className={s.statN}>{totals.story + totals.post + totals.comm}</span><span className={s.statL}>משימות</span></div>
         <div className={s.stat}><span className={s.statN}>{totals.story}</span><span className={s.statL}>סטורים</span></div>
         <div className={s.stat}><span className={s.statN}>{totals.post}</span><span className={s.statL}>פוסטים</span></div>
         <div className={s.stat}><span className={s.statN}>{totals.comm}</span><span className={s.statL}>הודעות קהילה</span></div>
       </div>
 
       <div className={s.filterBar}>
-        {[{id:"all",name:"כל ההפקות"},...BLIST.map(id=>({id,name:BRANDS[id].name}))].map(f=>(
-          <button key={f.id} className={`${s.fbtn} ${brandFilter===f.id?s.fbtnOn:""}`}
-            style={brandFilter===f.id&&BRANDS[f.id]?{borderColor:BRANDS[f.id].text,color:BRANDS[f.id].text}:{}}
-            onClick={()=>setBrandFilter(f.id)}>{f.name}</button>
-        ))}
+        {PLAN_BRANDS.map(bid => {
+          const on = selected.has(bid);
+          return (
+            <button key={bid} className={`${s.fbtn} ${on ? s.fbtnOn : ""}`}
+              style={on ? { borderColor: BRANDS[bid].text, color: BRANDS[bid].text } : {}}
+              onClick={() => toggle(bid)}>{on ? "✓ " : ""}{BRANDS[bid].name}</button>
+          );
+        })}
       </div>
 
-      {windowDays.length===0 && <div className={s.empty}>אין משימות בטווח הזה. הוסף אירועים כדי לייצר תוכנית.</div>}
+      {visibleBrands.length === 0 && <div className={s.empty}>בחר לפחות הפקה אחת.</div>}
+      {visibleBrands.length > 0 && windowDays.every(d => !visibleBrands.some(b => d.tasks[b])) &&
+        <div className={s.empty}>אין משימות בטווח הזה. הוסף אירועים כדי לייצר תוכנית.</div>}
+
       {windowDays.map(day => {
         const d = new Date(day.date);
-        const entries = Object.entries(day.tasks).filter(([bid]) => brandFilter==="all" || bid===brandFilter);
+        const entries = visibleBrands.filter(b => day.tasks[b]).map(b => [b, day.tasks[b]]);
         if (!entries.length) return null;
         const wl = day.week;
         const showWeek = wl !== curWeek; if (showWeek) curWeek = wl;
-        const tag = relDay(today, d);
-        const isToday = diffDays(today,d)===0;
+        const isToday = diffDays(today, d) === 0;
         const anyEvent = entries.some(([bid]) => day.eventBrands.includes(bid));
         return (
           <div key={day.date}>
             {showWeek && <div className={s.weekSep}>{wl}</div>}
-            <div className={`${s.planDay} ${anyEvent?s.planDayEvent:""}`}>
+            <div className={`${s.planDay} ${anyEvent ? s.planDayEvent : ""}`}>
               <div className={s.planDayHead}>
                 <span className={s.planDate}>{fmtDateHeb(d)} · יום {dowHeb(d)}</span>
                 {isToday && <span className={s.planToday}>היום</span>}
@@ -74,10 +153,10 @@ export default function SocialPlan({ data, today, unlocked, setUnlocked }) {
               </div>
               {entries.map(([bid, ts]) => (
                 <div key={bid} className={s.planBrandBlock}>
-                  <span className={s.planBrandName} style={{background:BRANDS[bid].bg,color:BRANDS[bid].text}}>{BRANDS[bid].name}</span>
+                  <span className={s.planBrandName} style={{ background: BRANDS[bid].bg, color: BRANDS[bid].text }}>{BRANDS[bid].name}</span>
                   <div className={s.planTasks}>
-                    {ts.map((t,i) => (
-                      <div key={i} className={`${s.planTask} ${t.flag==="urgent"?s.planUrgent:t.flag==="key"?s.planKey:""}`}>
+                    {ts.map((t, i) => (
+                      <div key={i} className={`${s.planTask} ${t.flag === "urgent" ? s.planUrgent : t.flag === "key" ? s.planKey : ""}`}>
                         <span className={s.planIco}>{CH_ICON[t.ch]}</span>
                         <div className={s.planTaskBody}>
                           <span className={s.planType}>{t.type}</span>
